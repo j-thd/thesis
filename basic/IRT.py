@@ -215,6 +215,26 @@ def exit_velocity(AR_exit, T_chamber, R, gamma):
 
     return (2*R*gamma*T_chamber/(gamma-1)*(1-1/TR_exit))**0.5 
 
+def pressure_thrust(p_chamber, p_back, A_throat, AR, gamma):
+    """Returns the pressure thrust according to IRT
+
+    Args:
+        p_chamber (Pa): Chamber/total pressure
+        p_back (Pa): Back pressure
+        A_throat (m^2): Throat area
+        AR (-): Exit area ratio
+        gamma (-): Ratio of specific heats
+
+    Returns:
+        Pressure thrust (N): The pressure differential at the exit, multiplied by the exit area
+    """
+    M_exit = Mach_from_area_ratio(AR=AR,gamma=gamma)
+    PR_exit = pressure_ratio(M=M_exit,gamma=gamma)
+    p_exit = p_chamber/PR_exit
+    A_exit = A_throat*AR
+
+    return (p_exit-p_back)*A_exit
+
 def thrust(p_chamber, T_chamber, A_throat, AR_exit, p_back, gamma, R):
     """Returns the thrust according to IRT
     
@@ -233,10 +253,8 @@ def thrust(p_chamber, T_chamber, A_throat, AR_exit, p_back, gamma, R):
     m_dot = mass_flow(p_chamber=p_chamber, A_throat=A_throat, R=R, T_chamber=T_chamber, gamma=gamma)
     u_exit = exit_velocity(AR_exit=AR_exit,T_chamber=T_chamber,R=R,gamma=gamma)
     # Find the exit pressure to determine the pressure force
-    M_exit = Mach_from_area_ratio(AR=AR_exit,gamma=gamma)
-    PR_exit = pressure_ratio(M=M_exit,gamma=gamma)
-    p_exit = p_chamber/PR_exit
-    A_exit = A_throat*AR_exit
+    F_pressure = pressure_thrust(p_chamber=p_chamber,p_back=p_back,A_throat=A_throat, AR=AR_exit, gamma=gamma)
+
 
     # Finally, some checks are done and errors are thrown is the nozzle is not supersonic until at least the exit
     NS = nozzle_status(p_chamber=p_chamber, p_back=p_back, AR_exit=AR_exit, gamma=gamma)
@@ -248,7 +266,7 @@ def thrust(p_chamber, T_chamber, A_throat, AR_exit, p_back, gamma, R):
     print("Jet thrust: {:.2f} mN".format(m_dot*u_exit*1e3))
     print("Jet Isp {:3.0f} s".format(u_exit/9.81))
     # Otherwise, it's fine and returns the thrust
-    return m_dot*u_exit + (p_exit-p_back)*A_exit
+    return m_dot*u_exit + F_pressure
 
 def get_engine_performance(p_chamber, T_chamber, A_throat, AR_exit, p_back, gamma, R):
     """Returns a dictionary of most relevant engine performance. Raises an error if supersonic assumptions are broken
@@ -266,7 +284,7 @@ def get_engine_performance(p_chamber, T_chamber, A_throat, AR_exit, p_back, gamm
         dictionary with following parameters: # A dictionary allows for easy extension of variable without breaking previous code
             thrust {N} -- Total thrust
             m_dot {kg/s} - Mass flow of engine
-            u_exit {u_exit} - Exit velocity
+            u_exit {u_exit} - Exit velocity (NOT effective exit velocity, so no pressure terms included)
             nozzle_status - Status of nozzle (just an fyi function)
     """
     # First check if assumptions about sonic conditions in throat and supersonic conditions at exit hold

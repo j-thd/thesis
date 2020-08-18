@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from constants import stefan_boltzmann
-import thermo.water as water
+from thermo.prop import FluidProperties
 
 def calc_P_delta_h(T_in,T_out,m_dot,p_chamber):
     """Calculate power required to raise temperature of flow with mass flow m_dot
@@ -17,12 +17,15 @@ def calc_P_delta_h(T_in,T_out,m_dot,p_chamber):
         {W} - Required power
     """
     # Check if outlet state is gaseous
-    outlet_phase = water.get_phase(T=T_out,p=p_chamber)
+
+    fp = FluidProperties("water")
+
+    outlet_phase = fp.get_phase(T=T_out,p=p_chamber)
     if not (outlet_phase == "gas" or outlet_phase == "supercritical_gas"):
-        print(water.get_phase(T=T_out,p=p_chamber))
+        print(fp.get_phase(T=T_out,p=p_chamber))
         raise ValueError("Assumed outlet temperature is not not in gas phase")
     
-    Delta_h = water.get_enthalpy(T=T_out, p=p_chamber) - water.get_enthalpy(T=T_in, p=p_chamber)
+    Delta_h = fp.get_enthalpy(T=T_out, p=p_chamber) - fp.get_enthalpy(T=T_in, p=p_chamber)
 
     return m_dot*Delta_h
 

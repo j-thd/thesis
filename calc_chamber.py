@@ -3,7 +3,6 @@
 
 import basic.chamber as chamber
 import basic.IRT as IRT
-import thermo.water as water
 from constants import atm
 
 # Do calculation on Silva2017 engine - Thruster 5
@@ -34,7 +33,7 @@ except ValueError as ve:
 # Calculate ideal power consumption
 P_mh = chamber.ideal_power_consumption(mass_flow=ep['m_dot'],T_inlet=T_inlet,p_inlet=p_inlet,T_outlet=T_chamber,p_outlet=p_chamber)
 print("Thrust: {:.2f} mN".format(ep['thrust']*1e3))
-print("Isp: {:.1f} s".format(ep['u_exit']/9.80655))
+print("Isp: {:.1f} s".format(ep['u_exit']/9.80655)) # NOTE: not real isp, u_Exit is not effective exit velocity, so includes no pressure term
 print("Mass flow: {:.2f} mg/s".format(ep['m_dot']*1e6))
 print("Power {:1f} W".format(P_mh))
 
