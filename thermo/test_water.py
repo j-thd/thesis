@@ -216,6 +216,7 @@ class TestViscosity(unittest.TestCase):
             res_mu = fp.get_viscosity(T=T,p=pressure) 
             self.assertAlmostEqual(res_mu, mu, places=places)
 
+
         # Again but with different pressure
         pressure = 1e6 # 10 bar of pressure
         
@@ -229,6 +230,23 @@ class TestViscosity(unittest.TestCase):
             res_mu = fp.get_viscosity(T=T,p=pressure) 
             self.assertAlmostEqual(res_mu, mu, places=places)
 
+
+        # Add new test at 2.6 bar, as it seems to return weird viscosities
+        pressure = 0.26e6 
+
+        in_out = (  (300, 853.80e-6),
+                    (350, 368.83e-6),
+                    (400, 218.60e-6),
+                    (410, 13.579e-6),
+                    (450, 15.184e-6),
+                    (500, 17.231e-6),
+                    (640, 23.064e-6),
+                    (820, 30.484e-6))
+
+        for T, mu in in_out:
+            res_mu = fp.get_viscosity(T=T, p=pressure)
+            self.assertAlmostEqual(res_mu, mu, delta=0.01*mu)
+        
 class TestPrandtl(unittest.TestCase):
     def test_webbook_data(self):
         # Pick some random points of NIST webbook to calculate Prandlt numbers, instead of re-using tables of different functions

@@ -83,5 +83,6 @@ def Stanton_from_Nusselt_and_velocity(Nu, T_ref, p_ref, u, L_ref, fp: FluidPrope
     """
     Re = fp.get_Reynolds_from_velocity(T=T_ref,p=p_ref, L_ref=L_ref,u=u)
     Pr = fp.get_Prandtl(T=T_ref,p=p_ref)
+    print("Prandtl: {:3.4f}".format(Pr))
 
     return Nu/(Re*Pr)

@@ -13,7 +13,7 @@ import basic.IRT as IRT
 def NIT_Rajeev(F_desired, p_inlet, h_throat, w_throat, throat_roc, AR_exit, p_back, divergence_half_angle, fp: FluidProperties, heating=True):
     pass
 
-def NIS_IRT(F_desired, p_chamber, T_chamber, AR_exit, p_back, fp: FluidProperties):
+def engine_performance_from_F_and_T(F_desired, p_chamber, T_chamber, AR_exit, p_back, fp: FluidProperties):
     """ Returns Nozzle Inlet State based on IRT
 
     Args:
@@ -31,7 +31,7 @@ def NIS_IRT(F_desired, p_chamber, T_chamber, AR_exit, p_back, fp: FluidPropertie
         dict{A_throat [m^2], m_dot [kg/s]}: Throat area and mass flow
     """
     # Default range for temperature for root-finding algorithm
-    A_low = 0 # [K]
+    A_low = 1e-20 # [K]
     A_high = 1e-6 # [K]
 
     R = fp.get_specific_gas_constant() # [J/(kg*K)]
@@ -44,7 +44,7 @@ def NIS_IRT(F_desired, p_chamber, T_chamber, AR_exit, p_back, fp: FluidPropertie
     )
 
     if root_result.converged:
-        A_throat = root_result.root # [K]
+        A_throat = root_result.root # [m^2]
     else:
         raise Exception("No solution found for given temperature")
 
@@ -52,19 +52,21 @@ def NIS_IRT(F_desired, p_chamber, T_chamber, AR_exit, p_back, fp: FluidPropertie
 
     ep = IRT.get_engine_performance(p_chamber=p_chamber, T_chamber=T_chamber, A_throat=A_throat, \
                         AR_exit=AR_exit,p_back=p_back, gamma=fp.get_specific_heat_ratio(T_chamber,p_chamber),R=R)
+    # Add throat area to dictionary
+    ep['A_throat'] = A_throat # This is usually an input for get_engine_performance, but now added to make it one complete solution
+    #ep['Isp'] = IRT.effective_ISP(thrust=F_desired,m_dot=ep['m_dot']) # [s] Effective specific impulse
 
-    return {    'A_throat': A_throat,
-                'm_dot': ep['m_dot']}
+    return ep
 
 def DB_IRT(F_desired, p_inlet, T_inlet, T_chamber, L_channel, w_channel, h_channel, w_throat, h_throat, AR_exit, p_back, fp: FluidProperties, heating=True):
 
 
-    inlet_state = NIS_IRT(F_desired=F_desired, p_chamber=p_inlet, T_chamber=T_chamber, AR_exit=AR_exit, p_back=p_back, fp=fp)
+    inlet_state = engine_performance_from_F_and_T(F_desired=F_desired, p_chamber=p_inlet, T_chamber=T_chamber, AR_exit=AR_exit, p_back=p_back, fp=fp)
     A_throat = inlet_state['A_throat'] # [m^2] Throat area necessary for thrust F, given other conditions
     m_dot = inlet_state['m_dot'] # [kg/s] Mass flow determined necessary for thrust F, given other conditions
 
     # Report on flow conditions and achieved throat area
-    print("Throat area: {:3.4f} mm^2".format(A_throat*1e6))
+    print("Throat area: {:3.4f} um^2".format(A_throat*1e12))
     print("Mass flow: {:3.4f} mg/s".format(m_dot*1e6))
 
     # Calculate resultant throat width
@@ -74,6 +76,7 @@ def DB_IRT(F_desired, p_inlet, T_inlet, T_chamber, L_channel, w_channel, h_chann
     A_channel = w_channel * h_channel # [m^2] Channel cross-section
     rho_inlet = fp.get_density(T=T_inlet, p=p_inlet) # [kg/m^3]
     u_inlet = velocity_from_mass_flow(m_dot=m_dot, rho=rho_inlet, A=A_channel) # [m/s]
+    print("u_inlet: {:3.9f} m/s".format(u_inlet))
     wetted_perimeter = wetter_perimeter_rectangular(w_channel = w_channel, h_channel=h_channel) # [m]
     D_hydraulic = hydraulic_diameter(A=A_channel,wetted_perimeter=wetted_perimeter) # [m]
 
@@ -83,12 +86,13 @@ def DB_IRT(F_desired, p_inlet, T_inlet, T_chamber, L_channel, w_channel, h_chann
     # Reference temperature for Nu must be the same as for St
     T_bulk = (T_inlet+T_chamber)/2 # [K] Bulk temperature is the reference temperature for DB
     St = Stanton_from_Nusselt_and_velocity(Nu=Nu, T_ref=T_bulk, p_ref=p_inlet, u=u_inlet, L_ref=D_hydraulic, fp=fp) # [-] Stanton number
+    print("Stanton: {:3.9f} ".format(St))
     h_conv = h_conv_from_Stanton(Stanton=St, u=u_inlet, T_ref=T_bulk, p_ref=p_inlet, fp=fp) # [W/(m^2*K)] Heat transfer coefficient for conduction
 
     # Now everything is known, only one wall temperature will result in the desired heat flow
     # From the change in enthalpy and mass flow the required heat flow can be found
     delta_h = ideal_enthalpy_change(T_inlet=T_inlet, p_inlet=p_inlet, T_outlet=T_chamber, p_outlet=p_inlet,fp=fp) # [J/kg] Change in enthalpy across chamber
-    Q_dot = -delta_h/m_dot # [W] Required heat flow from wall to fluid (is negative because it flows AWAY from the wall to the fluid)
+    Q_dot = -delta_h*m_dot # [W] Required heat flow from wall to fluid (is negative because it flows AWAY from the wall to the fluid)
     A_wall = L_channel * w_channel # [m^2] Channel wall through which the heat is conducted (one-sided heating is assumed)
     T_wall = T_wall_from_heat_flow(Q_dot=Q_dot, heat_transfer_coefficient=h_conv,T_ref=T_bulk, A_wall=A_wall)
     print("Required wall temperature: {:4.3f} K".format(T_wall))

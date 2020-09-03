@@ -181,3 +181,44 @@ class FluidProperties:
             T (K): Temperature
         """
         return PropsSI("T","H", h, "P", p, self.fluid)
+
+    def get_saturation_temperature(self, p):
+        """Return the saturation temperature of the fluid based on pressure
+
+        Args:
+            p (Pa): Saturation pressure
+
+        Returns:
+            T_sat (K): Saturation temperature
+        """
+        # The saturation temperature is found by setting the vapour quality Q somewhere between 0 and 1 (no superheating or subcooling)
+        return PropsSI("T" ,"P", p, "Q", 0, self.fluid) # [K] Saturation temperature
+
+    def get_saturation_pressure(self, T):
+        """Return the saturation temperature of the fluid based on temperature
+
+        Args:
+            T (K): Saturation temperature
+
+        Returns:
+            p_sat (Pa): Saturation temperature
+        """
+        # The saturation pressure is found by setting the vapour quality Q somehwhere between 0 and 1 (no superheating and cooling)
+        return PropsSI("P", "T", T, "Q", 0, self.fluid) # [Pa] Saturation pressure
+
+    def get_critical_temperature(self):
+        """Return the temperature at the critical point
+
+        Returns:
+            T_crit (K): Critical temperature
+        """
+        return PropsSI("TCRIT", self.fluid) # [K] Critical temperature
+
+    def get_critical_pressure(self):
+        """Return the pressure at the critical point
+
+        Returns:
+            p_crit (Pa): Critical pressure
+        """
+        
+        return PropsSI("PCRIT", self.fluid) # [Pa] Critical pressure

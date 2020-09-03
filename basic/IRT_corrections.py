@@ -144,7 +144,7 @@ def Rajeev_complete(p_chamber, T_chamber, w_throat, h_throat, throat_roc, AR_exi
     print("Mass flow: {:.3f} mg/s".format(ep['m_dot']*1e6))
 
     m_dot_ideal = ep['m_dot'] # [kg/s] Ideal mass flow
-    F_ideal = ep['thrust'] # [N] Ideal thrust
+    #F_ideal = ep['thrust'] # [N] Ideal thrust
 
     ## CALCULATING THE CORRECTION FACTORS
 

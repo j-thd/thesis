@@ -1,5 +1,6 @@
 # File for basic IRT functions
 # For source of equation check appendix A of literature study
+from constants import g0
 from sys import float_info
 import math
 from scipy import optimize
@@ -69,6 +70,19 @@ def pressure_ratio(M, gamma):
         Pressure ratio {-} -- Total/chamber pressure divided by local pressure
     """
     return temperature_ratio(M=M,gamma=gamma)**(gamma/(gamma-1))
+
+def density_ratio(M,gamma):
+    """Returns the density ratio w.r.t total/chamber density by calculating the temperature ratio by raising it to the right power according to isentropic relations
+    
+    Arguments:
+        M {-} -- Mach number
+        gamma {-} -- Specific heat ratio
+    
+    Returns:
+        density ratio {-} -- Total/chamber density divided by local density
+    """
+
+    return temperature_ratio(M=M,gamma=gamma)**(1/(gamma-1))
 
 def is_throat_sonic(p_chamber, p_back, exit_area_ratio, gamma):
     """Returns whether the throat has reached sonic conditions at all, to verify that chocked flow occurs in the nozzle
@@ -215,6 +229,22 @@ def exit_velocity(AR_exit, T_chamber, R, gamma):
 
     return (2*R*gamma*T_chamber/(gamma-1)*(1-1/TR_exit))**0.5 
 
+def throat_velocity(T_chamber, R, gamma):
+    """Return throat velocity by returning speed of sound in throat
+
+    Args:
+        T_chamber (K): Total/chamber temperature
+        R (J/(kg*K)): Specific gas constant
+        gamma (-): Specific heat ratio
+
+    Returns:
+        u_throat (m/s): Throat velocity (assuming it is speed of sound)
+    """
+    TR_throat = temperature_ratio(M=1,gamma=gamma) # [-] Temperature ratio in the throat
+    T_throat = T_chamber / TR_throat # [K] Throat temperature
+
+    return (gamma*R*T_throat)**0.5 # [m/s] Speed of sound calculation in throat
+
 def pressure_thrust(p_chamber, p_back, A_throat, AR, gamma):
     """Returns the pressure thrust according to IRT
 
@@ -234,6 +264,18 @@ def pressure_thrust(p_chamber, p_back, A_throat, AR, gamma):
     A_exit = A_throat*AR
 
     return (p_exit-p_back)*A_exit
+
+def effective_ISP(thrust, m_dot):
+    """Returns specific impulse in seconds, based on standard gravity
+
+    Args:
+        thrust (N): Thrust
+        m_dot (kg/s): Mass flow
+
+    Returns:
+        I_sp (s): Effective specific impulse based on standard gravity
+    """
+    return thrust/(m_dot*g0)
 
 def thrust(p_chamber, T_chamber, A_throat, AR_exit, p_back, gamma, R):
     """Returns the thrust according to IRT
@@ -263,8 +305,8 @@ def thrust(p_chamber, T_chamber, A_throat, AR_exit, p_back, gamma, R):
     if(NS == "shock in nozzle"):
         print("The throat reaches sonic conditions, but pressure is so low that normal shock occurs in nozzle. Therefore M<1 at the exit and calculations assuming supersonic conditions there are invalid.")
     
-    print("Jet thrust: {:.2f} mN".format(m_dot*u_exit*1e3))
-    print("Jet Isp {:3.0f} s".format(u_exit/9.81))
+    # print("Jet thrust: {:.2f} mN".format(m_dot*u_exit*1e3))
+    # print("Jet Isp {:3.0f} s".format(u_exit/9.81))
     # Otherwise, it's fine and returns the thrust
     return m_dot*u_exit + F_pressure
 
@@ -295,12 +337,29 @@ def get_engine_performance(p_chamber, T_chamber, A_throat, AR_exit, p_back, gamm
         print("The throat reaches sonic conditions, but pressure is so low that normal shock occurs in nozzle. Therefore M<1 at the exit and calculations assuming supersonic conditions there are invalid.")
 
     # If this is not a problem, it is fine to return other values, as they will be correct
-    m_dot = mass_flow(p_chamber=p_chamber, A_throat=A_throat,R=R, T_chamber=T_chamber, gamma=gamma)
-    u_exit = exit_velocity(AR_exit=AR_exit,T_chamber=T_chamber, R=R, gamma=gamma)
-    F = thrust(p_chamber=p_chamber, T_chamber=T_chamber, A_throat=A_throat, AR_exit=AR_exit, p_back=p_back, gamma=gamma, R=R)
+    m_dot = mass_flow(p_chamber=p_chamber, A_throat=A_throat,R=R, T_chamber=T_chamber, gamma=gamma) # [kg/s]
+    u_exit = exit_velocity(AR_exit=AR_exit,T_chamber=T_chamber, R=R, gamma=gamma) # [m/s]
+    F = thrust(p_chamber=p_chamber, T_chamber=T_chamber, A_throat=A_throat, AR_exit=AR_exit, p_back=p_back, gamma=gamma, R=R) # [N]
+    Isp = effective_ISP(thrust=F, m_dot=m_dot) # [s]
     
+    # Add information about throat for correction purposes (calculating Reynolds numbers etc..)
+    T_throat = T_chamber / temperature_ratio(M=1,gamma=gamma)  # [K] Temperature in nozzle
+    p_throat = p_chamber / pressure_ratio(M=1,gamma=gamma) # [Pa] Pressure in nozzle
+    u_throat = throat_velocity(T_chamber=T_chamber,R=R,gamma=gamma) # [m/s] Velocity in throat
+
+
+    # Add information about exit to check for condensation in nozzle exit
+    M_exit = Mach_from_area_ratio(AR=AR_exit, gamma=gamma) # [-] Mach number at the xit
+    T_exit = T_chamber / temperature_ratio(M=M_exit,gamma=gamma) # [K] Temperature at exit
+    p_exit = p_chamber / pressure_ratio(M=M_exit, gamma=gamma) # [Pa] Pressure at exit
 
     return {'thrust': F,
+            'Isp': Isp,
             'm_dot': m_dot,
             'u_exit': u_exit,
-            'nozzle_status': NS}
+            'nozzle_status': NS,
+            'T_throat': T_throat,
+            'p_throat': p_throat,
+            'u_throat': u_throat,
+            'T_exit': T_exit,
+            'p_exit': p_exit}
