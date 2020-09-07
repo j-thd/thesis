@@ -27,7 +27,7 @@ def plot_condensation_curve(AR_min, AR_max, p_c, fp, T_ref):
 
     AR = IRT.area_ratio(M=M_exit, gamma=gamma) # [-] Area ratios corresponding to all specified mach numbers
 
-    plt.plot(AR, T_chamber, label ="{:2.0f} bar , $\\gamma={:1.2f}$".format(p_c*1e-5,gamma))
+    plt.plot(AR, T_chamber, label ="{:2.0f} bar , $T_c={:3.0f}$ K, $\\gamma={:1.2f}$".format(p_c*1e-5,T_ref,gamma))
 
 def plot_pressure_curve(AR_min, AR_max, p_c, fp, T_ref):
     gamma = fp.get_specific_heat_ratio(T=T_ref,p=p_c) # [-] Specific heat ratio

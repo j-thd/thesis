@@ -7,7 +7,7 @@ class FluidProperties:
     def __init__(self, fluid):
         # CoolProp works with various fluids, but experience has taught me that sometimes, unexpected results can occur.
         # These unexpected results only appeared with mixtures so far, but precautions are taken anyway.
-        verified_fluids = ["HEOS::Water" ,"nitrogen"]
+        verified_fluids = ["HEOS::Water", "water" ,"nitrogen"]
         # Documentation says "HEOS::Water" is the most accurate, but it is also slow.
         # "IF97::Water" is faster but slightly less accurate
 
@@ -220,5 +220,5 @@ class FluidProperties:
         Returns:
             p_crit (Pa): Critical pressure
         """
-        
+
         return PropsSI("PCRIT", self.fluid) # [Pa] Critical pressure

@@ -289,7 +289,7 @@ class TestReynolds(unittest.TestCase):
         # Pick some random points of NIST webbook to calculate Reynolds numbers, instead of re-using tables of different functions
         # Source: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=IsoBar&Digits=5&P=0.1&THigh=1000&TLow=300&TInc=100&RefState=DEF&TUnit=K&PUnit=MPa&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=Pa*s&STUnit=N%2Fm
 
-        fp = thermo.prop.FluidProperties("HEOS::Water")
+        fp = thermo.prop.FluidProperties("water")
 
         T = 300 # [K]
         p = 1e5 # [Pa]
