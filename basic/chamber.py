@@ -143,6 +143,36 @@ def wetter_perimeter_rectangular(w_channel, h_channel):
         P (m): Wetter perimeter of a rectangular channel
     """
     return 2 * (w_channel + h_channel)
+
+def hydraulic_diameter_rectangular(w_channel, h_channel):
+    """ Calculate the hydraulic diameter for a rectangular channel
+
+    Args:
+        w_channel (m): Channel width
+        h_channel (m): Channel height/depth
+
+    Returns:
+        D_h (m): Hydraulic diameter of a rectangular channel
+    """
+    A = w_channel*h_channel # [m^2] Channel cross-sectional area`
+    P = wetter_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Wetted perimeter of channel
+
+    return 4 * A / P # [m] 
+
+def velocity_from_mass_flow(A, m_dot, rho):
+    """ Calculate channel velocity from mass flow
+
+    Args:
+        A (m^2): Channel area
+        m_dot (kg/s): Mass flow
+        rho (kg/m^3): Density
+
+    Returns:
+        u (m/s): Velocity inside a channel
+    """
+
+
+    return m_dot / (rho* A)
     
 def mass_flow(A, u, rho):
     """ Returns the mass flows based on density, flow velocity and area
@@ -157,16 +187,19 @@ def mass_flow(A, u, rho):
     """
     return rho*A*u # [kg/s]
 
-def velocity_from_mass_flow(m_dot, rho, A):
-    """Calculate velocity in a channel from cross-sectional area A, density and mass flow
+
+def required_power(m_dot, delta_h):
+    """Required power to raise enthalpy of flow with mass flow m_dot with delta_h
 
     Args:
-        m_dot (kg/s): Mass flow in channel
-        rho (kg/m^3): Density (at the same location where A is evaluated)
-        A (m^2): Cross-sectional channel area (at the same location where A is evaluated)
-
-    Returns:
-        u (m/s): Flow velocity in channel
+        m_dot (kg/s): Mass flow
+        delta_h (J/kg): Specific enthalpy increase
     """
 
-    return m_dot / (rho * A)
+    return m_dot * delta_h # [W] Required power (Power is negative as it defined as heat flow from T_wall to T_ref)
+
+def required_heater_area(Q_dot, h_conv, T_wall, T_ref):
+
+    assert(Q_dot > 0) # Check if Q_dot is negative as per convention
+
+    return Q_dot/(h_conv * (T_wall - T_ref)) # [m^2] Required heater area 

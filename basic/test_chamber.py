@@ -94,5 +94,140 @@ class TestHConvFromStanton(unittest.TestCase):
         res_h_conv = chamber.h_conv_from_Stanton(Stanton=St,T_ref=T,p_ref=p,u=u,fp=fp)
         self.assertAlmostEqual(exp_h_conv,res_h_conv,delta=exp_h_conv/res_h_conv*0.0001)
 
+class TestWettedPerimeterRectangular(unittest.TestCase):
+    def test_simple_input(self):
+        h = 1
+        w = 1
+
+        exp = 4
+        res = chamber.wetter_perimeter_rectangular(w_channel=w, h_channel=h)
+        self.assertEqual(res,exp)
+
+        h=4
+
+        exp = 10
+        res = chamber.wetter_perimeter_rectangular(w_channel=w, h_channel=h)
+        self.assertEqual(res,exp)
+
+        w = 2
+        exp= 12
+        res = chamber.wetter_perimeter_rectangular(w_channel=w, h_channel=h)
+        self.assertEqual(res,exp)
+
+class TestHydraulicDiameterRectangular(unittest.TestCase):
+    def test_simple_input(self):
+        h=1
+        w=1
+
+        # Should revert to side's length for a square channel
+        exp = 1
+        res = chamber.hydraulic_diameter_rectangular(w_channel=w,h_channel=h)
+        self.assertEqual(exp,res)
+
+        h=2
+        exp= 4*2/6
+        res = chamber.hydraulic_diameter_rectangular(w_channel=w,h_channel=h)
+        self.assertEqual(exp,res)
+
+        w = 4
+        exp = 4*8/12
+        res = chamber.hydraulic_diameter_rectangular(w_channel=w,h_channel=h)
+        self.assertEqual(exp,res)
 
 
+
+class TestVelocityFromMassFlow(unittest.TestCase):
+    def test_simple_input(self):
+        A=1
+        m_dot=1
+        rho=1
+
+        exp = 1
+        res = chamber.velocity_from_mass_flow(A=A, m_dot=m_dot, rho=rho) 
+        self.assertEqual(exp,res)
+
+        A=2
+        exp=0.5
+        res = chamber.velocity_from_mass_flow(A=A, m_dot=m_dot, rho=rho) 
+        self.assertEqual(exp,res)
+
+        rho= 5
+        exp=0.1
+        res = chamber.velocity_from_mass_flow(A=A, m_dot=m_dot, rho=rho) 
+        self.assertEqual(exp,res)
+
+        m_dot=100
+        exp=10
+        res = chamber.velocity_from_mass_flow(A=A, m_dot=m_dot, rho=rho) 
+        self.assertEqual(exp,res)
+
+class TestMassFlow(unittest.TestCase):
+    def test_simple_input(self):
+        rho=3
+        A=5
+        u=7
+
+        exp = 105
+        res = chamber.mass_flow(A=A, u=u, rho=rho)
+        self.assertEqual(exp,res)
+
+        u =1
+        exp=15
+        res = chamber.mass_flow(A=A, u=u, rho=rho)
+        self.assertEqual(exp,res)
+
+        A = 10
+        exp = 30
+        res = chamber.mass_flow(A=A, u=u, rho=rho)
+        self.assertEqual(exp,res)
+        
+        rho = 1
+        exp = 10
+        res = chamber.mass_flow(A=A, u=u, rho=rho)
+        self.assertEqual(exp,res)
+
+
+class TestRadiationLoss(unittest.TestCase):
+    def test_simple_input(self):
+        # inputs of 1 should return stefan-boltzmann constant
+        emmisivity = 1
+        A = 1
+        T = 1
+
+        exp = 5.670374419e-8 # [W/(m^2*K^4)]  Source: https://en.wikipedia.org/wiki/Stefan%E2%80%93Boltzmann_constant
+        res = chamber.radiation_loss(T=T,A=A, emmisivity=emmisivity)
+        self.assertEqual(exp,res)
+
+        emmisivity = 0.5
+        exp = 0.5*exp
+        res = chamber.radiation_loss(T=T,A=A, emmisivity=emmisivity)
+        self.assertEqual(exp,res)
+
+        A = 4
+        exp = 4*exp
+        res = chamber.radiation_loss(T=T,A=A, emmisivity=emmisivity)
+        self.assertEqual(exp,res)
+
+        T = 2
+        exp= 16*exp
+        res = chamber.radiation_loss(T=T,A=A, emmisivity=emmisivity)
+        self.assertEqual(exp,res)
+
+class TestRequiredPower(unittest.TestCase):
+    def test_simple_input(self):
+        m_dot = 1
+        delta_h = 1
+
+        exp = 1
+        res = chamber.required_power(m_dot=m_dot, delta_h=delta_h)
+        self.assertEqual(exp,res)
+
+        m_dot = 2
+        exp = 2
+        res = chamber.required_power(m_dot=m_dot, delta_h=delta_h)
+        self.assertEqual(exp,res)
+
+        delta_h = 0.5
+        exp=1
+        res = chamber.required_power(m_dot=m_dot, delta_h=delta_h)
+        self.assertEqual(exp,res)

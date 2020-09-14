@@ -2,6 +2,19 @@
 
 from thermo.prop import FluidProperties
 
+def Nu_DB(args):
+    """Quick and dirty placeholder for Nusselt number from Dittus Boelter
+
+    Args:
+        args ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    Nu = 0.023* args['Re']**0.8*args['Pr']**0.4
+    print("Nusselt: {}".format(Nu))
+    return Nu
+
 def Nusselt_Dittus_Boelter(T_inlet, T_outlet, p, D_hydraulic, L_channel, u, fp: FluidProperties, heating=True, supressExceptions=False):
     """Calculate the Nusselt number based on the emperical relation D.10 from the TRP reader, which is in turn based on the work of Dittus and Boelter in 1930
 
@@ -86,3 +99,37 @@ def Stanton_from_Nusselt_and_velocity(Nu, T_ref, p_ref, u, L_ref, fp: FluidPrope
     print("Prandtl: {:3.4f}".format(Pr))
 
     return Nu/(Re*Pr)
+
+def Stanton_from_Nusselt_func_and_velocity(Nu_func, u, T_ref, p_ref, L_ref, fp: FluidProperties, kwargs: dict = None):
+    """Returns the Stanton number based on the relations between the Nusselt number, the Prandtl number and the Reynolds numbers.
+    This time with a Nusselt function built-in to it
+
+    WARNING: REFERENCE LENGTH L_ref MUST BE EQUAL TO THE SAME LENGTH THE NUSSELT NUMBER WAS DETERMINED WITH
+    WARNING: REFERENCE THERMODYNAMIC STATE (T_ref, p_ref) MUST BE EQUAL TO THOSE WITH WHICH NUSSELT NUMBER WAS DETERMINED
+
+    Args:
+        Nu (-): Nusselt number
+        T_ref (K): Reference temperature (WARNING: MUST BE EQUAL TO THE REFERENCE STATE NUSSELT NUMBER WAS DETERMINED WITH)
+        p_ref (Pa): Reference tressure (WARNING: MUST BE EQUAL TO THE REFERENCE STATE NUSSELT NUMBER WAS DETERMINED WITH)
+        u (m/s): Flow velocity
+        L_ref (m): Reference length (for calculation of Reynold's number) WARNING: MUST BE EQUAL TO THE REFERENCE LENGTH THE NUSSELT NUMBER WAS DETERMINED WITH
+        fp (FluidProperties): Object to access fluid properties
+        kwargs (dict) : Additional keywords arguments that must be passed into the Nusselt functions
+
+    Returns:
+        St (-): Stanton number.
+    """
+    Re = fp.get_Reynolds_from_velocity(T=T_ref,p=p_ref, L_ref=L_ref,u=u)
+    Pr = fp.get_Prandtl(T=T_ref,p=p_ref)
+
+    # List of arguments that the Nusselt function could use. Just passing them all on
+    arguments = {   'T_ref': T_ref,
+                    'p_ref': p_ref,
+                    'Re': Re,
+                    'Pr': Pr,
+                    'u': u,
+                    'L_ref': L_ref,
+                    'fp': fp,
+                    'kwargs': kwargs } 
+
+    return Nu_func(args=arguments)/(Re*Pr)

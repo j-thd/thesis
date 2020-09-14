@@ -36,7 +36,7 @@ p_inlet = 10e5 # [Pa] Inlet pressure
 #w_throat = 1.74e-5 # [m] Throat width
 AR_exit = 100
 p_back = 0
-T_chamber = 2000 # [K] Chamber temperature
+T_chamber = 600 # [K] Chamber temperature
 T_inlet = 300 # [K] Inlet temperature (usually room temperature)
 L_channel = 100e-3 # [m] Channel length
 
