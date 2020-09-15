@@ -196,10 +196,10 @@ def required_power(m_dot, delta_h):
         delta_h (J/kg): Specific enthalpy increase
     """
 
-    return m_dot * delta_h # [W] Required power (Power is negative as it defined as heat flow from T_wall to T_ref)
+    return m_dot * delta_h # [W] Required power (Power is positive if heat flows from T_wall to T_ref)
 
 def required_heater_area(Q_dot, h_conv, T_wall, T_ref):
 
-    assert(Q_dot > 0) # Check if Q_dot is negative as per convention
+    assert(Q_dot > 0) # Check if Q_dot is positive as per convention
 
     return Q_dot/(h_conv * (T_wall - T_ref)) # [m^2] Required heater area 

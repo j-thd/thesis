@@ -231,3 +231,39 @@ class TestRequiredPower(unittest.TestCase):
         exp=1
         res = chamber.required_power(m_dot=m_dot, delta_h=delta_h)
         self.assertEqual(exp,res)
+
+class TestRequiredHeaterArea(unittest.TestCase):
+    def test_simple_input(self):
+        h=1
+        Q=1 
+        T_wall = 2
+        T_ref = 1
+
+        exp= 1
+        res = chamber.required_heater_area(Q_dot=Q,h_conv=h,T_wall=T_wall,T_ref=T_ref)
+        self.assertEqual(exp,res)
+
+        T_wall = 3
+        exp = 0.5
+        res = chamber.required_heater_area(Q_dot=Q,h_conv=h,T_wall=T_wall,T_ref=T_ref)
+        self.assertEqual(exp,res)
+        
+        h=0.25
+        exp = 2
+        res = chamber.required_heater_area(Q_dot=Q,h_conv=h,T_wall=T_wall,T_ref=T_ref)
+        self.assertEqual(exp,res)
+
+        Q=10
+        exp = 20
+        res = chamber.required_heater_area(Q_dot=Q,h_conv=h,T_wall=T_wall,T_ref=T_ref)
+        self.assertEqual(exp,res)
+        
+        T_wall = 5
+        exp = 10
+        res = chamber.required_heater_area(Q_dot=Q,h_conv=h,T_wall=T_wall,T_ref=T_ref)
+        self.assertEqual(exp,res)
+
+        T_ref = 4
+        exp = 40
+        res = chamber.required_heater_area(Q_dot=Q,h_conv=h,T_wall=T_wall,T_ref=T_ref)
+        self.assertEqual(exp,res)
