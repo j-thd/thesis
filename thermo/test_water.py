@@ -246,7 +246,152 @@ class TestViscosity(unittest.TestCase):
         for T, mu in in_out:
             res_mu = fp.get_viscosity(T=T, p=pressure)
             self.assertAlmostEqual(res_mu, mu, delta=0.01*mu)
+
+class TestSaturationDensityLiquid(unittest.TestCase):
+    def test_webbook_data(self):
+        # Comparison taken from: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=SatT&Digits=5&PLow=1&PHigh=10&PInc=1&RefState=DEF&TUnit=K&PUnit=bar&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm
+        # p_sat (Pa), rho_l (kg/m^3)
+
+        fp = thermo.prop.FluidProperties("water")
+        in_out = (  (1e5, 958.63),
+                    (2e5, 942.94),
+                    (3e5, 931.82),
+                    (4e5, 922.89),
+                    (5e5, 915.29),
+                    (6e5, 908.59),
+                    (7e5, 902.56),
+                    (8e5, 897.04),
+                    (9e5, 891.92),
+                    (10e5, 887.13))
         
+        for p, rho_l in in_out:
+            res_rho_l = fp.get_liquid_density_at_psat(p_sat=p)
+            self.assertAlmostEqual(res_rho_l, rho_l, delta= 0.00001*rho_l)
+
+class TestSaturationDensityVapour(unittest.TestCase):
+    def test_webbook_data(self):
+        # Comparison taken from: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=SatT&Digits=5&PLow=1&PHigh=10&PInc=1&RefState=DEF&TUnit=K&PUnit=bar&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm
+        # p_sat (Pa), rho_l (kg/m^3)
+
+        fp = thermo.prop.FluidProperties("water")
+        in_out = (  (1e5, 0.59034),
+                    (2e5, 1.1291),
+                    (3e5, 1.6508),
+                    (4e5, 2.1627),
+                    (5e5, 2.6680),
+                    (6e5, 3.1687),
+                    (7e5, 3.6660),
+                    (8e5, 4.1608),
+                    (9e5, 4.6536),
+                    (10e5, 5.1450))
+        
+        for p, rho_g in in_out:
+            res_rho_g = fp.get_vapour_density_at_psat(p_sat=p)
+            self.assertAlmostEqual(res_rho_g, rho_g, delta= 0.0001*rho_g)
+
+class TestSurfaceTensionAtPSat(unittest.TestCase):
+    def test_webbook_data(self):
+        # Comparison taken from: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=SatT&Digits=5&PLow=1&PHigh=10&PInc=1&RefState=DEF&TUnit=K&PUnit=bar&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm
+        # p_sat (Pa), gamma (N/m)
+
+        fp = thermo.prop.FluidProperties("water")
+        in_out = (  (1e5, 0.058988),
+                    (2e5, 0.054926),
+                    (3e5, 0.052205),
+                    (4e5, 0.050097),
+                    (5e5, 0.048350),
+                    (6e5, 0.046845),
+                    (7e5, 0.045514),
+                    (8e5, 0.044317),
+                    (9e5, 0.043224),
+                    (10e5, 0.042217))
+        
+        for p, gamma in in_out:
+            res_gamma = fp.get_surface_tension_at_psat(p_sat=p)
+            self.assertAlmostEqual(res_gamma, gamma, delta= 0.005*gamma)
+
+class TestBondNumber(unittest.TestCase):
+    def test_webbook_data(self):
+        # Data taken from: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=SatT&Digits=5&PLow=1&PHigh=10&PInc=1&RefState=DEF&TUnit=K&PUnit=bar&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm
+        # Take some examples to calculate it
+        fp = thermo.prop.FluidProperties("water")
+        p_sat = 1e5 # [Pa] Saturation pressure
+        L_ref = 1 # [m] Reference length
+
+        exp_Bo = 159326
+        res_Bo = fp.get_Bond_number(p_sat=p_sat, L_ref=L_ref) # [-]
+        self.assertAlmostEqual(exp_Bo, res_Bo, delta=0.001*res_Bo)
+
+        L_ref = 0.1 # [m]
+        exp_Bo = 159326*0.01
+        res_Bo = fp.get_Bond_number(p_sat=p_sat, L_ref=L_ref) # [-]
+        self.assertAlmostEqual(exp_Bo, res_Bo, delta=0.001*res_Bo)
+
+        p_sat = 5e5
+        exp_Bo = 1851.66
+        res_Bo = fp.get_Bond_number(p_sat=p_sat, L_ref=L_ref) # [-]
+        self.assertAlmostEqual(exp_Bo, res_Bo, delta=0.01*res_Bo)
+
+class TestSaturationEnthalpyGas(unittest.TestCase):
+    def test_webbook_data(self):
+        # Data taken from: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=SatT&Digits=5&PLow=1&PHigh=10&PInc=1&RefState=DEF&TUnit=K&PUnit=bar&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm
+        fp = thermo.prop.FluidProperties("water")
+        # p, h_sat_gas (j/kg)
+        in_out = (  (1e5, 2674.9e3),
+                    (2e5, 2706.2e3),
+                    (3e5, 2724.9e3),
+                    (4e5, 2738.1e3),
+                    (5e5, 2748.1e3),
+                    (6e5, 2756.1e3),
+                    (7e5, 2762.8e3),
+                    (8e5, 2768.3e3),
+                    (9e5, 2773.0e3),
+                    (10e5, 2777.1e3))
+
+        for p , h_sat_gas in in_out:
+            res_h_sat_gas = fp.get_saturation_enthalpy_gas(p=p)
+            self.assertAlmostEqual(h_sat_gas,res_h_sat_gas,delta=0.001*res_h_sat_gas)
+
+class TestSaturationTemperature(unittest.TestCase):
+    def test_webbook_data(self):
+        # Data taken from: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=SatT&Digits=5&PLow=1&PHigh=10&PInc=1&RefState=DEF&TUnit=K&PUnit=bar&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm
+        fp = thermo.prop.FluidProperties("water")
+        # p, T_sat 
+        in_out = (  (1e5, 372.76),
+                    (2e5, 393.36),
+                    (3e5, 406.67),
+                    (4e5, 416.76),
+                    (5e5, 424.98),
+                    (6e5, 431.98),
+                    (7e5, 438.10),
+                    (8e5, 443.56),
+                    (9e5, 448.50),
+                    (10e5, 453.03))
+
+        for p , T_sat in in_out:
+            res_T_sat = fp.get_saturation_temperature(p=p)
+            self.assertAlmostEqual(T_sat,res_T_sat,delta=0.001*res_T_sat)
+
+class TestGetTemperatureFromEnthalpyAndPressure(unittest.TestCase):
+    def test_webbook_data(self):
+        # Data taken from: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=SatT&Digits=5&PLow=1&PHigh=10&PInc=1&RefState=DEF&TUnit=K&PUnit=bar&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm
+        fp = thermo.prop.FluidProperties("water")
+        # p, T_sat 
+        in_out = (  (1e5, 417.50e3, 372.76),
+                    (2e5, 2706.23e3, 393.36),
+                    (3e5, 561.43e3, 406.67),
+                    (4e5, 2738.1e3, 416.76),
+                    (5e5, 640.09e3, 424.98),
+                    (6e5, 2756.1e3, 431.98),
+                    (7e5, 697.00e3, 438.10),
+                    (8e5, 2768.3e3, 443.56),
+                    (9e5, 742.56e3, 448.50),
+                    (10e5, 2777.1e3, 453.03))
+
+        for p , h, T in in_out:
+            res_T = fp.get_temperature_from_enthalpy_and_pressure(p=p, h=h)
+            self.assertAlmostEqual(T,res_T,delta=0.0001*res_T)
+
 class TestPrandtl(unittest.TestCase):
     def test_webbook_data(self):
         # Pick some random points of NIST webbook to calculate Prandlt numbers, instead of re-using tables of different functions

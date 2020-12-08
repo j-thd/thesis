@@ -17,17 +17,19 @@ class TestNusseltDittusBoelter(unittest.TestCase):
 
         D_h = 1e-3
         L = 1000e-3
-        u=1e-3
+        
+        m_dot = 1e-6 # [kg/s]
+        A= 0.0007359976448075365 # [m^2]
 
         exp_Nu = 0.0018785745665208552
-        res_Nu = thermo.convection.Nusselt_Dittus_Boelter(T_inlet=T_inlet,T_outlet=T_outlet,p=p, D_hydraulic=D_h,L_channel=L,u=u,fp=fp, supressExceptions=True)
-        self.assertAlmostEqual(exp_Nu,res_Nu,delta=0.00001*exp_Nu/res_Nu)
+        res_Nu = thermo.convection.Nusselt_Dittus_Boelter(T_inlet=T_inlet,T_outlet=T_outlet,p=p, D_hydraulic=D_h,L_channel=L,m_dot=m_dot,A=A,fp=fp, supressExceptions=True)
+        self.assertAlmostEqual(exp_Nu,res_Nu,delta=0.01*exp_Nu)
 
         # Same but with cooling assumption
 
         exp_Nu = 0.001896461381677763
-        res_Nu = thermo.convection.Nusselt_Dittus_Boelter(T_inlet=T_inlet,T_outlet=T_outlet,p=p, D_hydraulic=D_h,L_channel=L,u=u,fp=fp, heating=False, supressExceptions=True)
-        self.assertAlmostEqual(exp_Nu,res_Nu,delta=0.00001*exp_Nu/res_Nu)
+        res_Nu = thermo.convection.Nusselt_Dittus_Boelter(T_inlet=T_inlet,T_outlet=T_outlet,p=p, D_hydraulic=D_h,L_channel=L,m_dot=m_dot, A=A,fp=fp, heating=False, supressExceptions=True)
+        self.assertAlmostEqual(exp_Nu,res_Nu,delta=0.01*exp_Nu)
 
 class TestNuDB_func(unittest.TestCase):
     def test_one(self):
@@ -61,7 +63,8 @@ class TestStantonFromNuFunc(unittest.TestCase):
         p = 5e5 # [Pa]
 
         D_h = 1e-3
-        u=1e-3
+        m_dot = 1e-6 # [kg/s]
+        A= 0.0007359976448075365 # [m^2]
 
         Nu_func = Nu_DB
         T_bulk = (T_inlet + T_outlet)/2
@@ -70,13 +73,13 @@ class TestStantonFromNuFunc(unittest.TestCase):
         Re = 0.04578292954139569
 
         exp_St = 0.0018785745665208552/(Re*Pr)
-        res_St = thermo.convection.Stanton_from_Nusselt_func_and_velocity(Nu_func=Nu_func, u=u, T_ref=T_bulk, p_ref=p, L_ref=D_h, fp=fp)
-        self.assertAlmostEqual(exp_St,res_St,delta=exp_St/res_St*0.001)
+        res_St = thermo.convection.Stanton_from_Nusselt_func_and_velocity(Nu_func=Nu_func, m_dot=m_dot, A=A, T_ref=T_bulk, p_ref=p, L_ref=D_h, fp=fp)
+        self.assertAlmostEqual(exp_St,res_St,delta=exp_St*0.01)
 
         def dummy_func(args):
             return 5
 
         # Another test with a dummy func
         exp_St = 5/(Re*Pr)
-        res_St = thermo.convection.Stanton_from_Nusselt_func_and_velocity(Nu_func=dummy_func, u=u, T_ref=T_bulk, p_ref=p, L_ref=D_h, fp=fp)
+        res_St = thermo.convection.Stanton_from_Nusselt_func_and_velocity(Nu_func=dummy_func, m_dot=m_dot,A=A, T_ref=T_bulk, p_ref=p, L_ref=D_h, fp=fp)
         self.assertAlmostEqual(exp_St,res_St,delta=exp_St*0.01)

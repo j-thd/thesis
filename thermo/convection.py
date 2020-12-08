@@ -1,5 +1,6 @@
 # File to contain all the convection proposed in literature
 
+from basic.chamber import velocity_from_mass_flow
 from thermo.prop import FluidProperties
 
 def Nu_DB(args):
@@ -12,10 +13,9 @@ def Nu_DB(args):
         [type]: [description]
     """
     Nu = 0.023* args['Re']**0.8*args['Pr']**0.4
-    print("Nusselt: {}".format(Nu))
     return Nu
 
-def Nusselt_Dittus_Boelter(T_inlet, T_outlet, p, D_hydraulic, L_channel, u, fp: FluidProperties, heating=True, supressExceptions=False):
+def Nusselt_Dittus_Boelter(T_inlet, T_outlet, p, D_hydraulic, L_channel, m_dot, A, fp: FluidProperties, heating=True, supressExceptions=False):
     """Calculate the Nusselt number based on the emperical relation D.10 from the TRP reader, which is in turn based on the work of Dittus and Boelter in 1930
 
     Args:
@@ -24,7 +24,8 @@ def Nusselt_Dittus_Boelter(T_inlet, T_outlet, p, D_hydraulic, L_channel, u, fp: 
         p (Pa): Channel pressure (assumed to be inlet pressure)
         D_hydraulic (m): Hydraulic diameter (for non-circular channels)
         L_channel (m): Channel length
-        u (m/s): Flow velocity (assumed at inlet)
+        m_dot (kg/s): Mass flow (used to calculate velocity at the correct density)
+        A (m^2): Area through which fluid flows
         fp (FluidProperties): Object to access properties of the fluid
         heating (bool, optional): Is True if the channel wall is heated. Defaults to True.
         supressExceptions (bool, optional): Surpresses the exceptions thrown if the channel parameters lie outside the range of validity. Defaults to False.
@@ -50,7 +51,9 @@ def Nusselt_Dittus_Boelter(T_inlet, T_outlet, p, D_hydraulic, L_channel, u, fp: 
     # match the desired conditions
     # Implicitly this also means that any pressure drop due to other reason is not evaluated, but I expect to have no big effect on the Re and Pr anyway
     T_bulk = (T_inlet+T_outlet)/2 # [K]
-    Re_bulk = fp.get_Reynolds_from_velocity(T=T_bulk, p=p, L_ref=D_hydraulic, u=u) # The reference length is the tube diameter, so hydraulic is used instead for this channel
+    rho_bulk = fp.get_density(T=T_bulk, p=p) # [kg/m^3] Density
+    u_bulk = velocity_from_mass_flow(A=A, m_dot=m_dot, rho=rho_bulk) # [m/s] Velocity at bulk temperature
+    Re_bulk = fp.get_Reynolds_from_velocity(T=T_bulk, p=p, L_ref=D_hydraulic, u=u_bulk) # The reference length is the tube diameter, so hydraulic is used instead for this channel
     Pr_bulk = fp.get_Prandtl(T=T_bulk,p=p)
 
     # Check if flow paramaters are in range of validity
@@ -77,7 +80,7 @@ def Nusselt_Dittus_Boelter(T_inlet, T_outlet, p, D_hydraulic, L_channel, u, fp: 
 
     return 0.023 * Re_bulk**0.8 * Pr_bulk**n
 
-def Stanton_from_Nusselt_and_velocity(Nu, T_ref, p_ref, u, L_ref, fp: FluidProperties):
+def Stanton_from_Nusselt_and_velocity(Nu, T_ref, p_ref, L_ref, m_dot, A, fp: FluidProperties):
     """Returns the Stanton number based on the relations between the Nusselt number, the Prandtl number and the Reynolds numbers.
 
     WARNING: REFERENCE LENGTH L_ref MUST BE EQUAL TO THE SAME LENGTH THE NUSSELT NUMBER WAS DETERMINED WITH
@@ -86,21 +89,23 @@ def Stanton_from_Nusselt_and_velocity(Nu, T_ref, p_ref, u, L_ref, fp: FluidPrope
     Args:
         Nu (-): Nusselt number
         T_ref (K): Reference temperature (WARNING: MUST BE EQUAL TO THE REFERENCE STATE NUSSELT NUMBER WAS DETERMINED WITH)
-        p_ref (Pa): Reference tressure (WARNING: MUST BE EQUAL TO THE REFERENCE STATE NUSSELT NUMBER WAS DETERMINED WITH)
-        u (m/s): Flow velocity
+        p_ref (Pa): Reference pressure (WARNING: MUST BE EQUAL TO THE REFERENCE STATE NUSSELT NUMBER WAS DETERMINED WITH)
+        m_dot (kg/s): Mass flow (used for calculating velocity at correct density)
+        A (m^2): Channel area
         L_ref (m): Reference length (for calculation of Reynold's number) WARNING: MUST BE EQUAL TO THE REFERENCE LENGTH THE NUSSELT NUMBER WAS DETERMINED WITH
         fp (FluidProperties): Object to access fluid properties
 
     Returns:
         St (-): Stanton number.
     """
-    Re = fp.get_Reynolds_from_velocity(T=T_ref,p=p_ref, L_ref=L_ref,u=u)
+    
+    Re = fp.get_Reynolds_from_mass_flow(T=T_ref,p=p_ref, L_ref=L_ref,m_dot=m_dot,A=A)
     Pr = fp.get_Prandtl(T=T_ref,p=p_ref)
     print("Prandtl: {:3.4f}".format(Pr))
 
     return Nu/(Re*Pr)
 
-def Stanton_from_Nusselt_func_and_velocity(Nu_func, u, T_ref, p_ref, L_ref, fp: FluidProperties, kwargs: dict = None):
+def Stanton_from_Nusselt_func_and_velocity(Nu_func, m_dot, A, T_ref, p_ref, L_ref, fp: FluidProperties, kwargs: dict = None):
     """Returns the Stanton number based on the relations between the Nusselt number, the Prandtl number and the Reynolds numbers.
     This time with a Nusselt function built-in to it
 
@@ -111,7 +116,8 @@ def Stanton_from_Nusselt_func_and_velocity(Nu_func, u, T_ref, p_ref, L_ref, fp: 
         Nu (-): Nusselt number
         T_ref (K): Reference temperature (WARNING: MUST BE EQUAL TO THE REFERENCE STATE NUSSELT NUMBER WAS DETERMINED WITH)
         p_ref (Pa): Reference tressure (WARNING: MUST BE EQUAL TO THE REFERENCE STATE NUSSELT NUMBER WAS DETERMINED WITH)
-        u (m/s): Flow velocity
+        m_dot (kg/s): Mass flow (used for calculating velocity at correct density)
+        A (m^2): Channel area
         L_ref (m): Reference length (for calculation of Reynold's number) WARNING: MUST BE EQUAL TO THE REFERENCE LENGTH THE NUSSELT NUMBER WAS DETERMINED WITH
         fp (FluidProperties): Object to access fluid properties
         kwargs (dict) : Additional keywords arguments that must be passed into the Nusselt functions
@@ -119,7 +125,7 @@ def Stanton_from_Nusselt_func_and_velocity(Nu_func, u, T_ref, p_ref, L_ref, fp: 
     Returns:
         St (-): Stanton number.
     """
-    Re = fp.get_Reynolds_from_velocity(T=T_ref,p=p_ref, L_ref=L_ref,u=u)
+    Re = fp.get_Reynolds_from_mass_flow(T=T_ref,p=p_ref, L_ref=L_ref,m_dot=m_dot,A=A)
     Pr = fp.get_Prandtl(T=T_ref,p=p_ref)
 
     # List of arguments that the Nusselt function could use. Just passing them all on
@@ -127,9 +133,31 @@ def Stanton_from_Nusselt_func_and_velocity(Nu_func, u, T_ref, p_ref, L_ref, fp: 
                     'p_ref': p_ref,
                     'Re': Re,
                     'Pr': Pr,
-                    'u': u,
+                    'm_dot': m_dot,
+                    'A': A,
                     'L_ref': L_ref,
                     'fp': fp,
                     'kwargs': kwargs } 
 
     return Nu_func(args=arguments)/(Re*Pr)
+
+def Nu_laminar_developed_constant_wall_temp_square(args):
+    """Nusselt number for fully developed laminar flow in a square channel
+    with constant wall temperature
+    """
+    return 3.66
+
+def Nu_laminiar_developed_constant_heat_flux_square(args):
+    """Nusselt number for fully developed laminiar flow in a square channel
+    with constant heat flux
+    """
+    return 2.98
+
+def Nu_Kandlikar_NDB_Re_low_sat_gas_constant_wall_temp_square_water(args):
+    """Nusselt number for a Re<100 in a channel with a constant wall temp and square shape
+
+    Args:
+        args (): Dictionary with flow similarity parameters
+    """
+
+    return 1058*args['Bo']**0.7*3.614

@@ -21,7 +21,7 @@ def ideal_enthalpy_change(T_inlet, p_inlet, T_outlet, p_outlet, fp: FluidPropert
     h_outlet = fp.get_enthalpy(T=T_outlet, p=p_outlet)
 
     outlet_phase = fp.get_phase(T=T_outlet,p=p_outlet)
-    if not outlet_phase == 'gas':
+    if not (outlet_phase == 'gas' or outlet_phase == 'supercritical_gas'):
         print("Warning: Phase at chamber exit is not gaseous but {}".format(outlet_phase))
         
     return h_outlet-h_inlet
@@ -72,7 +72,21 @@ def radiation_loss(T, A, emmisivity):
     Returns:
         [type] -- [description]
     """
-
+    #print(type(T))
+    T = float(T)
+    #print(type(T))
+    #print("Temperature**4: {} ".format(T**4))
+    #print(type(A))
+    A = float(A)
+    print("Area: {}".format(A))
+    #print(type(A))
+    #print(type(emmisivity))
+    emmisivity = float(emmisivity)
+    #print(type(emmisivity))
+    #print(type(stefan_boltzmann))
+    P_rad = emmisivity * A * stefan_boltzmann * T**4
+    print("P_rad: {}".format(P_rad))
+    #print(type(P_rad))
     return emmisivity * A * stefan_boltzmann * T**4
 
 def convective_heat_flow(heat_transfer_coefficient, T_wall, T_ref, A_wall):
@@ -201,5 +215,9 @@ def required_power(m_dot, delta_h):
 def required_heater_area(Q_dot, h_conv, T_wall, T_ref):
 
     assert(Q_dot > 0) # Check if Q_dot is positive as per convention
+    assert(T_wall > T_ref)
 
     return Q_dot/(h_conv * (T_wall - T_ref)) # [m^2] Required heater area 
+
+def required_chip_area(L_channel, w_channel, w_channel_margin):
+    return L_channel * (w_channel + 2*w_channel_margin)
