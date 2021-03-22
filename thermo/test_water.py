@@ -310,6 +310,21 @@ class TestSurfaceTensionAtPSat(unittest.TestCase):
             res_gamma = fp.get_surface_tension_at_psat(p_sat=p)
             self.assertAlmostEqual(res_gamma, gamma, delta= 0.005*gamma)
 
+# class TestSurfaceTension(unittest.TestCase):
+#     def test_webbook_data(self):
+#         # Comparison taken from: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=IsoTherm&Digits=5&PLow=1&PHigh=5&PInc=1&T=400&RefState=DEF&TUnit=K&PUnit=bar&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=Pa*s&STUnit=N%2Fm
+#         # p_sat (Pa), gamma (N/m)
+        
+#         fp = thermo.prop.FluidProperties("water")
+#         T = 400 # [K]
+#         p = 2.457e5 # [Pa]
+
+#         exp = 0.053578
+#         res = fp.get_surface_tension(T=T, p=p)
+#         self.assertAlmostEqual(exp,res, exp*1e-5)
+
+
+
 class TestBondNumber(unittest.TestCase):
     def test_webbook_data(self):
         # Data taken from: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=SatT&Digits=5&PLow=1&PHigh=10&PInc=1&RefState=DEF&TUnit=K&PUnit=bar&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm
@@ -475,3 +490,75 @@ class TestSpecificGasConstant(unittest.TestCase):
         res = fp.get_specific_gas_constant()
         self.assertAlmostEqual(specific_gas_constant,res,2)
 
+class TestSaturationFunctions(unittest.TestCase):
+    # One test class to test saturation functions all at once, as the change is nicely tabulated in webbook
+    # Reference values at this url: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=SatT&Digits=5&PLow=1&PHigh=10&PInc=1&RefState=DEF&TUnit=K&PUnit=bar&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=Pa*s&STUnit=N%2Fm
+    def test_webbook(self):
+        fp = thermo.prop.FluidProperties("water")
+
+        p = 5e5
+
+        # Enthalpy J/kg
+        exp_h_l = 640.09e3
+        exp_h_g = 2748.1e3
+
+        res_h_l = fp.get_saturation_enthalpy_liquid(p=p)
+        res_h_g = fp.get_saturation_enthalpy_gas(p=p)
+
+        self.assertAlmostEqual(exp_h_l,res_h_l, delta=exp_h_l*1e-5)
+        self.assertAlmostEqual(exp_h_g, res_h_g, delta=exp_h_g*1e-5)
+
+        # Conductivity W/(m*K)
+        exp_kappa_l = 0.68172
+        exp_kappa_g = 0.031870
+
+        res_kappa_l = fp.get_liquid_saturation_conductivity(p_sat=p)
+        res_kappa_g = fp.get_gas_saturation_conductivity(p_sat=p)
+
+        self.assertAlmostEqual(exp_kappa_l,res_kappa_l, delta=exp_kappa_l*5e-3)
+        self.assertAlmostEqual(exp_kappa_g, res_kappa_g, delta=exp_kappa_g*5e-2)
+
+        # Viscosity {Pa*s}
+        exp_mu_l = 0.00018009
+        exp_mu_g = 1.4055e-05
+
+        res_mu_l = fp.get_liquid_saturation_viscosity(p_sat=p)
+        res_mu_g = fp.get_gas_saturation_viscosity(p_sat=p)
+
+        self.assertAlmostEqual(exp_mu_l,res_mu_l, delta=exp_mu_l*1e-3)
+        self.assertAlmostEqual(exp_mu_g, res_mu_g, delta=exp_mu_g*3e-3)
+        # Specific heat at constant pressure J/(kg*K)
+        exp_cp_l = 4.3120e3
+        exp_cp_g = 2.4103e3
+
+        res_cp_l = fp.get_liquid_saturation_cp(p_sat=p)
+        res_cp_g = fp.get_gas_saturation_cp(p_sat=p)
+
+        self.assertAlmostEqual(exp_cp_l,res_cp_l, delta=exp_cp_l*1e-4)
+        self.assertAlmostEqual(exp_cp_g, res_cp_g, delta=exp_cp_g*1e-4)
+
+        exp_Pr_l = 1.1391012145748987
+        exp_Pr_g = 1.062967257609036
+
+        res_Pr_l = fp.get_saturation_Prandtl_liquid(p_sat=p)
+        res_Pr_g = fp.get_saturation_Prandtl_gas(p_sat=p)
+
+        self.assertAlmostEqual(exp_Pr_l,res_Pr_l, delta=exp_Pr_l*1e-2)
+        self.assertAlmostEqual(exp_Pr_g, res_Pr_g, delta=exp_Pr_g*5e-2)
+        
+class TestCriticalValues(unittest.TestCase):
+    # Reference: https://webbook.nist.gov/cgi/cbook.cgi?ID=C7732185&Units=SI&Mask=4#Thermo-Phase
+    def test_crit_values(self):
+        fp = thermo.prop.FluidProperties("water")
+
+        #Expected critical point
+        exp_T = 647 # [K]
+        exp_p = 220.64e5 # [Pa]
+
+        res_T = fp.get_critical_temperature()
+        res_p = fp.get_critical_pressure()
+
+        self.assertAlmostEqual(exp_T,res_T, delta = 0.1)
+        self.assertAlmostEqual(exp_p, res_p, delta= exp_p*1e-5)
+
+        # It's super effective!

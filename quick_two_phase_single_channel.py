@@ -7,8 +7,9 @@ from thermo.prop import FluidProperties
 
 td = thrusters.thruster_data.td_Silva_5 # Dictionary with design/measured values
 
-Nu_func_gas = thermo.convection.Nu_Kandlikar_NDB_Re_low_sat_gas_constant_wall_temp_square_water # [-] Function to calculate Nusselt number
+Nu_func_gas = thermo.convection.Nu_DB # [-] Function to calculate Nusselt number
 Nu_func_liquid = thermo.convection.Nu_DB
+
 
 #bla
 # For da Silva's thrusters the numbers have to fudged a bit, because the reported temperatures

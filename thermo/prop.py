@@ -92,6 +92,29 @@ class FluidProperties:
         """
         viscosity = PropsSI('viscosity', 'T', T, 'P', p, self.fluid)
         return viscosity
+    
+    def get_liquid_saturation_viscosity(self, p_sat):
+        """Returns viscosity at saturation point p_sat in liquid phase
+
+        Args:
+            p_sat (Pa): Saturation pressure
+        
+        Returns:
+            mu (Pa*s): Viscosity
+        """
+        return  PropsSI('viscosity','Q', 0, 'P', p_sat, self.fluid)
+    
+    def get_gas_saturation_viscosity(self, p_sat):
+        """Returns viscosity at saturation point p_sat in gas phase
+
+        Args:
+            p_sat (Pa): Saturation pressure
+        Returns:
+            mu (Pa*s): Viscosity
+        """
+        return  PropsSI('viscosity','Q', 1, 'P', p_sat, self.fluid)
+
+
 
     def get_specific_heat_ratio(self, T, p):
         """Returns ratio of specific heats (gamma) through CoolProp library
@@ -120,6 +143,28 @@ class FluidProperties:
         """
         return PropsSI('CPMASS', 'T', T, 'P', p, self.fluid)
 
+    def get_liquid_saturation_cp(self, p_sat):
+        """Return specific heat under constant pressure at liquid saturation point
+
+        Args:
+            p_sat (Pa): Saturation pressure
+
+        Returns:
+            cp (J/(kg*K)): Specific heat under constant pressure
+        """
+        return PropsSI('CPMASS', 'Q', 0, 'P', p_sat, self.fluid)
+
+    def get_gas_saturation_cp(self, p_sat):
+        """Return specific heat under constant pressure at gas saturation point
+
+        Args:
+            p-sat (Pa): Saturation pressure
+
+        Returns:
+            cp (J/(kg*K)): Specific heat under constant pressure
+        """
+        return PropsSI('CPMASS', 'Q', 1, 'P', p_sat, self.fluid)
+
     def get_thermal_conductivity(self, T, p):
         """Return thermal conductivity
 
@@ -131,6 +176,28 @@ class FluidProperties:
             kappa (W/(m*K)): Thermal conductivity of fluid
         """
         return PropsSI("CONDUCTIVITY", 'T', T, 'P', p, self.fluid)
+
+    def get_liquid_saturation_conductivity(self, p_sat):
+        """Returns conductivity at saturation point p_sat in liquid phase
+
+        Args:
+            p_sat (Pa): Saturation pressure
+
+        Returns:
+            kappa (W/(m*K)): Thermal conductivity of fluid
+        """
+        return  PropsSI('CONDUCTIVITY','Q', 0, 'P', p_sat, self.fluid)
+
+    def get_gas_saturation_conductivity(self, p_sat):
+        """Returns conductivity at saturation point p_sat in gas phase
+
+        Args:
+            p_sat (Pa): Saturation pressure
+
+        Returns:
+            kappa (W/(m*K)): Thermal conductivity of fluid
+        """
+        return  PropsSI('CONDUCTIVITY','Q', 1, 'P', p_sat, self.fluid)
 
     def get_phase(self, T,p):
         """Returns the phase of fluid through CoolProp library
@@ -158,18 +225,18 @@ class FluidProperties:
 
         return gas_constant/molar_mass
 
-    def get_surface_tension(self, T, p):
-        """Returns surface tension at specified state
+    # def get_surface_tension(self, T, p):
+    #     """Returns surface tension at specified state
 
-        Args:
-            T (K): Temperature
-            p (Pa): Pressure
+    #     Args:
+    #         T (K): Temperature
+    #         p (Pa): Pressure
 
-        Returns:
-            gamma(N/m): Surface tension
-        """
+    #     Returns:
+    #         gamma(N/m): Surface tension
+    #     """
 
-        return PropsSI("SURFACE_TENSION", "T", T, "P", p, self.fluid)
+    #     return PropsSI("SURFACE_TENSION", "T", T, "P", p, self.fluid)
 
     def get_surface_tension_at_psat(self, p_sat):
         """Returns surface tension at saturation temperature in liquid state.
@@ -236,13 +303,35 @@ class FluidProperties:
         """
         cp = self.get_cp(T=T, p=p) # [J/kg]
         viscosity = self.get_viscosity(T=T, p=p) # [Pa*s]
+        #NOTE: might throw an error if close to saturation point
         kappa = self.get_thermal_conductivity(T=T, p=p) # [W/(m*K)]
 
-        print(cp)
-        print(viscosity)
-        print(kappa)
+        return cp*viscosity/kappa # [-] Prandtl number
+
+    def get_saturation_Prandtl_liquid(self, p_sat):
+        """Return the Prandtl number of a saturated liquid at p_sat
+
+        Args:
+            p_sat (Pa): Saturation pressure
+        """
+        cp = self.get_liquid_saturation_cp(p_sat = p_sat) # [J/kg]
+        viscosity = self.get_liquid_saturation_viscosity(p_sat=p_sat) # [Pa*s]
+        kappa = self.get_liquid_saturation_conductivity(p_sat=p_sat) # [W/(m*K)]
 
         return cp*viscosity/kappa # [-] Prandtl number
+
+    def get_saturation_Prandtl_gas(self, p_sat):
+        """Return the Prandtl number of a saturated gas at p_sat
+
+        Args:
+            p_sat (Pa): Saturation pressure
+        """
+        cp = self.get_gas_saturation_cp(p_sat = p_sat) # [J/kg]
+        viscosity = self.get_gas_saturation_viscosity(p_sat=p_sat) # [Pa*s]
+        kappa = self.get_gas_saturation_conductivity(p_sat=p_sat) # [W/(m*K)]
+
+        return cp*viscosity/kappa # [-] Prandtl number
+        
 
     def get_Bond_number(self, p_sat, L_ref):
         """ Return the Bond/Eotvos number at the saturation point.

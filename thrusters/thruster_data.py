@@ -27,7 +27,7 @@ td_Silva_5 = {
     "F": 0.67e-3, # [N]
     "m_dot": 0.55e-6, # [kg/s]
     "T_chamber": 423.03 , # [K]
-    "T_wall": 273.15+150, # [K] Wall temperature is hard to determine from paper (seems low)
+    "T_wall": 273.15+200, # [K] Wall temperature is hard to determine from paper (seems low)
     "channel_amount": 5, # [-]
     "p_inlet": 4.8e5, # [Pa]
     "T_inlet": 297.15, # [K] Room temperature of 24 degrees mentioned in report
@@ -43,14 +43,48 @@ td_Silva_5 = {
     "divergent_half_angle": math.radians(20) # [rad]
     }
 
-td_verification_one = {
-    "name": "Fictional thruster for verification of two_phase_single_channel()",
+## CEN2010 THRUSTERS ## STRAIGHT MULTI-CHANNEL THRUSTERS
+Cen2010_1 = {
+    "name": "Cen2010 2.33 mg/s",
     "propellant": "water",
-    "m_dot":        1e-6, # [kg/s]
-    "p_inlet":      5e5, # [Pa]
-    "T_inlet":      300, # [K]
-    "T_chamber":    500,  # [K]
-    "T_wall":       600, # [K]
-    "h_channel":    100e-6, # [m]
-    "w_channel":    100e-6, # [m]
+    "F": 2.3e-3, # [N]
+    "m_dot": 2.33e-6, # [kg/s]
+    "T_chamber": None , # [K]
+    "T_wall": 573.15, # [K] TBD
+    "channel_amount": 9, # [-]
+    "p_inlet": 1.28e5, # [Pa]
+    "T_inlet": 300, # [K] TBD
+    "p_back": None, # [Pa]
+    "h_channel": 120e-6, # [m]
+    "w_channel": 80e-6, # [m]
+    "L_channel": 6e-3, # [m]  
+    "h_throat": 120e-6, # [m]
+    "w_throat": 150e-6, # [m]
+    "AR_exit": 11.72, # [-]
+    "w_nozzle_exit": 1758e-6, # [m]
+    }
+
+td_verification_one = {
+    "name":             "Fictional thruster for verification of two_phase_single_channel()",
+    "propellant":   "water",
+    "m_dot":            1e-6, # [kg/s]
+    "p_inlet":          5e5, # [Pa]
+    "T_inlet":          300, # [K]
+    "T_chamber":        500,  # [K]
+    "T_wall":           600, # [K]
+    "h_channel":        100e-6, # [m]
+    "w_channel":        100e-6, # [m]
+}
+
+td_high_kinetic_energy = {
+    "name":             "Fictional thruster for worst-case pressure drop calculations",
+    "propellant":       "water",
+    "m_dot":            3.6e-6, # [kg/s]
+    "channel_amount":   5, # [-]
+    "p_inlet":          5e5, # [Pa]
+    "T_inlet":          300, # [K]
+    "T_chamber":        450, # [K]
+    "h_channel":        100e-6, # [m]
+    "w_channel":        100e-6, # [m]
+    "L_channel":        20e-3, # [m]
 }

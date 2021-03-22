@@ -383,8 +383,18 @@ def two_phase_single_channel(T_wall, w_channel, Nu_func_gas, Nu_func_liquid, T_i
     Bo_sat= fp.get_Bond_number(p_sat=p_ref, L_ref=D_hydraulic) # [-] Bond number at saturation pressure (assumed to be p_ref)
 
     # Calculate Nusselt number in both sections
-    args_gas = {'Re': Re_bulk_gas, 'Pr': Pr_bulk_gas, 'Bo': Bo_sat} # Arguments for Nusselt function (gas phase) 
-    args_liquid_multi = {'Re': Re_bulk_liquid_multi, 'Pr': Pr_bulk_liquid_multi} # Arguments for Nusselt function (liquid phase)
+    args_gas = {    
+        'Re': Re_bulk_gas,  # Arguments for Nusselt function (gas phase) 
+        'Pr': Pr_bulk_gas, 
+        'Bo': Bo_sat, 
+        } 
+
+    args_liquid_multi = { # Arguments for Nusselt function (liquid/multi phase)
+        'Re': Re_bulk_liquid_multi, 
+        'Pr': Pr_bulk_liquid_multi, 
+        'Bo': Bo_sat, 
+        } 
+
     Nu_gas = Nu_func_gas(args=args_gas)
     Nu_liquid_multi = Nu_func_liquid(args=args_liquid_multi)
     # Calculate Stanton number in both sections

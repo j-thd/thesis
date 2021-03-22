@@ -32,11 +32,11 @@ else:
     T_inlet = 300 # [K] Inlet temperature, used as assumption to calculate ideal power needed for heater
     p_chamber = 5e5 # [Pa] chamber pressure
     p_back = 0 # [Pa] expanded into vacuum
-    AR_exit = np.array([5,10,25,50]) # [-] Range of area ratios to go over
-    F = 2.5e-3 # [mN] Desired thrust
+    AR_exit = np.array([10, 20, 30, 40, 50]) # [-] Range of area ratios to go over
+    F = 4e-3 # [mN] Desired thrust
 
     # Range of temperatures to go over
-    T_chamber_min = 800 # [K]
+    T_chamber_min = 450 # [K]
     T_chamber_max = 2000 # [K]
     dT = (T_chamber_max - T_chamber_min)/50 # [K]
     T_chamber = np.arange(start=T_chamber_min, stop=T_chamber_max+dT/2, step=dT) # [K] Temperature range to plot (dT/2 added to include max in range)
@@ -160,6 +160,21 @@ axs[2][1].grid()
 axs[3][1].grid()
 axs[4][1].grid()
 axs[0][1].grid()
+
+# New figure for maximum power consumption calculations
+plt.figure()
+it_AR.reset()
+for AR in it_AR:
+    # Ideal power consumption
+    plt.plot(T_chamber, Pt_ideal[it_AR.index,:], label="{}".format(AR))
+
+plt.grid()
+plt.legend(title="Exit area ratio")
+plt.title("Ideal power consumption of thruster ({:1.1f} mN, {:1.0f} bar)".format(F*1e3,p_chamber*1e-5))
+plt.xlabel("Chamber temperature $T_c$ [K]")
+plt.ylabel("$P_{t,ideal}$ [W]")
+
+
 
 ## Print results
 m_dot_min = np.min(m_dot)

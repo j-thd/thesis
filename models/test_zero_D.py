@@ -62,10 +62,9 @@ class TestTwoPhaseSingleChannel(unittest.TestCase):
             m_dot=m_dot,
             h_channel=h_channel,
             fp=fp,
-            print_info=True)
+            print_info=False)
         
-        print(res)
-
+        
         # Checking liquid/multi-phase results
         self.assertAlmostEqual(exp_Q_dot_liquid_multi, res['Q_dot_liquid_multi'], delta=0.001*exp_Q_dot_liquid_multi)
         self.assertAlmostEqual(exp_T_bulk_liquid_multi, res['T_bulk_liquid_multi'], delta=0.001*exp_T_bulk_liquid_multi)
@@ -94,3 +93,38 @@ class TestTwoPhaseSingleChannel(unittest.TestCase):
 
         # Checking the total
         self.assertAlmostEqual(exp_L_channel, res['L_channel'], delta = 0.01*exp_L_channel)
+
+    def testIntegrationWithKandlikarRelation(self):
+        # Same test but only focussing on Nusselt number for Kandlikar relation, as that would prove thar arguments are correctly passed to function
+        td = thrusters.thruster_data.td_verification_one # Dummy dictionary with thruster data for verifcation
+
+        Nu_func_gas = thermo.convection.Nu_DB
+        Nu_func_liquid = thermo.convection.Nu_Kandlikar_NDB_Re_low_sat_gas_constant_wall_temp_square_water
+
+        T_wall = td['T_wall']
+        w_channel = td['w_channel']
+        T_inlet = td['T_inlet']
+        T_chamber = td['T_chamber']
+        p_ref = td['p_inlet']
+        m_dot = td['m_dot']
+        h_channel = td['h_channel']
+        fp = FluidProperties(td['propellant'])
+
+        # Check just the liquid/multi-phase Nusselt number of the Kandlikar relation, to ensure integration is correct
+        exp_Nu_liquid_multi = 46.74856022286813
+        
+
+        res = zD.two_phase_single_channel(
+            T_wall=T_wall,
+            w_channel=w_channel,
+            Nu_func_gas=Nu_func_gas,
+            Nu_func_liquid=Nu_func_liquid,
+            T_inlet=T_inlet,
+            T_chamber=T_chamber,
+            p_ref=p_ref,
+            m_dot=m_dot,
+            h_channel=h_channel,
+            fp=fp,
+            print_info=False)
+
+        self.assertAlmostEqual(exp_Nu_liquid_multi, res['Nu_liquid_multi'], delta=0.01*exp_Nu_liquid_multi)

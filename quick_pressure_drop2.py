@@ -2,7 +2,7 @@ import thrusters.thruster_data
 from basic.chamber import hydraulic_diameter_rectangular, velocity_from_mass_flow
 from thermo.prop import FluidProperties
 # Load a specific thruster for quick pressure drop calculations
-td = thrusters.thruster_data.td_Silva_5
+td = thrusters.thruster_data.td_high_kinetic_energy
 
 fp = FluidProperties(td['propellant']) # Object to access fluid properties from
 m_dot = td['m_dot']/td['channel_amount'] # [kg/s] Mass flow
@@ -19,13 +19,14 @@ D_h = hydraulic_diameter_rectangular(w_channel=w_channel, h_channel=h_channel) #
 A_channel = w_channel*h_channel
 # Inlet conditions
 rho_inlet = fp.get_density(T=T_inlet, p=p_inlet) # [kg/m^3]
+u_inlet = velocity_from_mass_flow(A=A_channel, m_dot=m_dot, rho=rho_inlet)
 # Outlet conditions
 rho_outlet = fp.get_density(T=T_outlet, p=p_outlet)
 u_outlet = velocity_from_mass_flow(A=A_channel, m_dot=m_dot, rho=rho_outlet)
 Re_outlet = fp.get_Reynolds_from_mass_flow(T=T_outlet, p =p_outlet, L_ref=D_h, m_dot=m_dot, A=A_channel)
 
-
-print(" --- GEOMETRY ---")
+print("\n\nTHRUSTER NAME: {}".format(td['name']))
+print("\n --- GEOMETRY ---")
 print("Channel length: {:4.3f} mm".format(L_channel*1e3))
 print("Hydraulic diameter: {:4.3f} um".format(D_h*1e6))
 print("L/D: {:3.2f} ".format(L_channel/D_h))
@@ -53,3 +54,18 @@ delta_P_accelaration = mass_flux**2 * ( 1/rho_inlet - 1/rho_outlet) # [Pa] Press
 print("\nAccelerational pressure drop: ")
 print("Mass flux: {} kg/m^2".format(mass_flux))
 print("Delta P: {:1.6f} bar".format(delta_P_accelaration*1e-5))
+
+print("\n --- CONTRACTION\EXPANSION LOSS AT INLET OUTLET  (worst case) ---")
+zeta_c = 0.5 # [-] Pressure loss factor due to contraction at inlet (worst case)
+zeta_e = 1.0 # [-] Pressure loss factor due to expansion at outlet (worst case)
+# Calculate worst-case pressure drops at inlet (contraction) and outlet (expansion)
+# Speeds calculated with the small channel, so this is is the velocity in the smallest pipe
+delta_P_inlet = zeta_c * 0.5 * rho_inlet * u_inlet**2
+delta_P_outlet = zeta_e * 0.5 * rho_outlet * u_outlet**2
+print("Pressure drop contraction: {:1.9f} bar".format(delta_P_inlet*1e-5))
+print("Pressure drop expansion: {:1.9f}".format(delta_P_outlet*1e-5))
+print("Delta P / P (contraction) {}".format(delta_P_inlet/p_outlet))
+print("Delta P / P (expansion) {}".format(delta_P_outlet/p_outlet))
+
+## Adding all worst-case pressure drops together
+print("")

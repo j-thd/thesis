@@ -2,6 +2,7 @@ import unittest
 import basic.chamber as chamber
 import thermo.prop 
 from thermo.prop import FluidProperties
+import numpy as np
 
 class TestIdealEnthalpyChange(unittest.TestCase):
     def test_from_table(self):
@@ -267,3 +268,50 @@ class TestRequiredHeaterArea(unittest.TestCase):
         exp = 40
         res = chamber.required_heater_area(Q_dot=Q,h_conv=h,T_wall=T_wall,T_ref=T_ref)
         self.assertEqual(exp,res)
+
+class TestEnthalpyDifferencePerSection(unittest.TestCase):
+    def test_simple_input(self):
+        a= np.array((0,1,2,3,4))
+        exp = np.array((0,1,1,1,1))
+        res = chamber.delta_enthalpy_per_section(a)
+        np.testing.assert_equal(exp,res)
+
+        a= np.array((1,1,2,3,5))
+        exp = np.array((0,0,1,1,2))
+        res = chamber.delta_enthalpy_per_section(a)
+        np.testing.assert_equal(exp,res)
+
+class TestReynoldsFromMassFlow(unittest.TestCase):
+    def test_simple_input(self):
+        m_dot = 1 # [kg/s]
+        A = 1 # [kg/s] 
+        mu = 1e-6 # [kg/s]
+        D_h = 1e-3 # [kg/s]
+
+        exp = 1e3
+        res = chamber.Reynolds_from_mass_flow(m_dot=m_dot,A_channel=A, L_ref=D_h,mu=mu)
+        self.assertAlmostEqual(exp,res,delta=1e-13*exp)
+
+        m_dot = 2
+        exp = 2e3
+        res = chamber.Reynolds_from_mass_flow(m_dot=m_dot,A_channel=A, L_ref=D_h,mu=mu)
+        self.assertAlmostEqual(exp,res,delta=1e-13*exp)
+
+        A = 0.5
+        exp = 4e3
+        res = chamber.Reynolds_from_mass_flow(m_dot=m_dot,A_channel=A, L_ref=D_h,mu=mu)
+        self.assertAlmostEqual(exp,res,delta=1e-13*exp)
+
+        D_h = 1
+        exp = 4e6
+        res = chamber.Reynolds_from_mass_flow(m_dot=m_dot,A_channel=A, L_ref=D_h,mu=mu)
+        self.assertAlmostEqual(exp,res,delta=1e-13*exp)
+        
+        mu = 1e-9
+        exp = 4e9
+        res = chamber.Reynolds_from_mass_flow(m_dot=m_dot,A_channel=A, L_ref=D_h,mu=mu)
+        self.assertAlmostEqual(exp,res,delta=1e-13*exp)
+
+
+
+

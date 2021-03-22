@@ -13,8 +13,8 @@ T_inlet = 300 # [K]
 T_outlet = 450 # [K]
 p_inlet = 5e5 # [Pa]
 h_channel = 100e-6 # [m] Channel height/depth
-w_channel = 1e-3 # [m] Channel width
-m_dot = 10e-6 # [kg/s]
+w_channel = 100e-6 # [m] Channel width
+m_dot = 3.6e-6 # [kg/s]
 
 # Hydraulic diameter and area
 A_channel = h_channel*w_channel # [m^2] Channel area through which fluid flows

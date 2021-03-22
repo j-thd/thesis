@@ -101,7 +101,6 @@ def Stanton_from_Nusselt_and_velocity(Nu, T_ref, p_ref, L_ref, m_dot, A, fp: Flu
     
     Re = fp.get_Reynolds_from_mass_flow(T=T_ref,p=p_ref, L_ref=L_ref,m_dot=m_dot,A=A)
     Pr = fp.get_Prandtl(T=T_ref,p=p_ref)
-    print("Prandtl: {:3.4f}".format(Pr))
 
     return Nu/(Re*Pr)
 
@@ -141,6 +140,20 @@ def Stanton_from_Nusselt_func_and_velocity(Nu_func, m_dot, A, T_ref, p_ref, L_re
 
     return Nu_func(args=arguments)/(Re*Pr)
 
+def heat_transfer_coefficient_from_Nu(Nu, kappa, L_ref):
+    """ Heat transfer coefficient, from Nusselt number
+
+    Args:
+        Nu (-): Nusselt number
+        kappa (W/(m*K)): Conduction
+        L_ref (m): Reference length (such as hydraulic diameter)
+
+    Returns:
+        h_conv (W/(m^2*K)) - Heat transfer coefficient
+    """
+
+    return Nu * kappa / L_ref 
+
 def Nu_laminar_developed_constant_wall_temp_square(args):
     """Nusselt number for fully developed laminar flow in a square channel
     with constant wall temperature
@@ -158,6 +171,7 @@ def Nu_Kandlikar_NDB_Re_low_sat_gas_constant_wall_temp_square_water(args):
 
     Args:
         args (): Dictionary with flow similarity parameters
-    """
 
-    return 1058*args['Bo']**0.7*3.614
+    """
+    return 1058*args['Bo']**0.7*3.614 # [W/(m^2*K)] Heat transfer cofficient according to 12.164 from Carey
+

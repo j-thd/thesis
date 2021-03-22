@@ -83,3 +83,17 @@ class TestStantonFromNuFunc(unittest.TestCase):
         exp_St = 5/(Re*Pr)
         res_St = thermo.convection.Stanton_from_Nusselt_func_and_velocity(Nu_func=dummy_func, m_dot=m_dot,A=A, T_ref=T_bulk, p_ref=p, L_ref=D_h, fp=fp)
         self.assertAlmostEqual(exp_St,res_St,delta=exp_St*0.01)
+
+class TestNuKandlikar_NDB_Re_low_sat_gas_constant_wall_temp_square_water(unittest.TestCase):
+    def test_simple_inputs(self):
+        args = {'Bo': 1}
+        exp_Nu = 3823.612
+
+        res_Nu = thermo.convection.Nu_Kandlikar_NDB_Re_low_sat_gas_constant_wall_temp_square_water(args=args)
+        self.assertAlmostEqual(exp_Nu, res_Nu, delta=1e-10*exp_Nu)
+        
+        args = {'Bo': 0.5}
+        exp_Nu = 2353.709276299291
+        
+        res_Nu = thermo.convection.Nu_Kandlikar_NDB_Re_low_sat_gas_constant_wall_temp_square_water(args=args)
+        self.assertAlmostEqual(exp_Nu, res_Nu, delta=1e-10*exp_Nu)

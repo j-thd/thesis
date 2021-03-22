@@ -1,4 +1,5 @@
-from constants import stefan_boltzmann
+import numpy as np
+from constants import stefan_boltzmann, g0
 from thermo.prop import FluidProperties
 
 def ideal_enthalpy_change(T_inlet, p_inlet, T_outlet, p_outlet, fp: FluidProperties):
@@ -214,10 +215,53 @@ def required_power(m_dot, delta_h):
 
 def required_heater_area(Q_dot, h_conv, T_wall, T_ref):
 
-    assert(Q_dot > 0) # Check if Q_dot is positive as per convention
-    assert(T_wall > T_ref)
+    #assert(Q_dot > 0) # Check if Q_dot is positive as per convention
+    #assert(T_wall > T_ref)
 
     return Q_dot/(h_conv * (T_wall - T_ref)) # [m^2] Required heater area 
 
 def required_chip_area(L_channel, w_channel, w_channel_margin):
     return L_channel * (w_channel + 2*w_channel_margin)
+
+def Reynolds_from_mass_flow(m_dot, A_channel, L_ref, mu):
+    """Calculate Reynolds number from mass flow
+
+    Args:
+        m_dot (kg/s): Mass flow
+        A_channel (m^2): Cross-sectional area of channel
+        L_ref (m): Reference length (probably hydraulic diameter)
+        mu (Pa*s): Viscosity
+
+    Returns:
+        Re (-): Reynold's number
+    """
+    return m_dot*L_ref/ (A_channel*mu)
+
+
+
+def Froude_number(u, L_ref):
+    """ Calculate Froude number from velocity and reference length
+
+    Args:
+        u (m/s): Flow velocity
+        L_ref (m): Reference length (like hydraulic diameter)
+
+    Returns:
+        Fr (-): Froude number
+    """
+
+    return u / (g0 * L_ref)**0.5 # [-] Froude number
+
+def delta_enthalpy_per_section(h):
+    """Calculate the enthalpy difference per section, to facilite calculation of how much power must be added in a section. The first section defaults to zero.
+
+    Args:
+        h (J/kg): Enthalpy at each station
+
+    Returns:
+        delta_h: Enthalpy difference between section i and i-1 (i=0 defaults to zero)
+    """
+    # Heating power required in section to increase temp by dT or quality by dx. Use enthalpy difference
+    # Make the first element zero to make the array conventiently precisely as long as T. Arbitrary choice as to whether last or first element is zero
+    delta_h = np.hstack((0, np.diff(h))) # [J/kg]
+    return delta_h
