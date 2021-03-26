@@ -1,5 +1,5 @@
 import numpy as np
-from constants import stefan_boltzmann, g0
+from physical_constants import stefan_boltzmann, g0
 from thermo.prop import FluidProperties
 
 def ideal_enthalpy_change(T_inlet, p_inlet, T_outlet, p_outlet, fp: FluidProperties):

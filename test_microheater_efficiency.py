@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 import microheater_efficiency as me
-import constants
+import physical_constants
 
 class TestCalcP_Delta_h(unittest.TestCase):
     def test_simple_input(self):
@@ -42,7 +42,7 @@ class TestPRad(unittest.TestCase):
         T_mh_range = np.array([400], dtype=object)
         
         res = me.calc_P_rad(T_mh_range=T_mh_range, emissivity=emissivity,A_mh=A_mh)
-        exp = 25600000000*constants.stefan_boltzmann
+        exp = 25600000000*physical_constants.stefan_boltzmann
         self.assertEqual(res, exp)
 
         # Same but temperature 1
@@ -51,31 +51,31 @@ class TestPRad(unittest.TestCase):
         T_mh_range = np.array([1], dtype=object)
         
         res = me.calc_P_rad(T_mh_range=T_mh_range, emissivity=emissivity,A_mh=A_mh)
-        exp = constants.stefan_boltzmann
+        exp = physical_constants.stefan_boltzmann
         self.assertEqual(res, exp)
 
         # same but with half emmisivity
         emissivity = 0.5
         res = me.calc_P_rad(T_mh_range=T_mh_range, emissivity=emissivity,A_mh=A_mh)
-        exp = 0.5*constants.stefan_boltzmann
+        exp = 0.5*physical_constants.stefan_boltzmann
         self.assertEqual(res, exp)
         # Same, but now with larger array, second temperature is T=2
         T_mh_range = np.array([1,2],dtype=object)
-        exp = np.array([0.5, 8])*constants.stefan_boltzmann
+        exp = np.array([0.5, 8])*physical_constants.stefan_boltzmann
         res = me.calc_P_rad(T_mh_range=T_mh_range, emissivity=emissivity,A_mh=A_mh)
         # np.equal() works on arrays with different dtype, and does element-wise comparison, and then alltrue can check if all elements are the same
         self.assertTrue(np.alltrue(np.equal(res,exp)))
 
         # One more time but with different area
         A_mh = 100
-        exp = np.array([50, 800])*constants.stefan_boltzmann
+        exp = np.array([50, 800])*physical_constants.stefan_boltzmann
         res = me.calc_P_rad(T_mh_range=T_mh_range, emissivity=emissivity,A_mh=A_mh)
         # np.equal() works on arrays with different dtype, and does element-wise comparison, and then alltrue can check if all elements are the same
         self.assertTrue(np.alltrue(np.equal(res,exp)))
 
         # Test to see if it can handle high values of T without overflow errors
         T_mh_range = np.array([1,10,100,1000,10000],dtype=object)
-        exp = np.array([50, 50*1e4, 50*1e8, 50*1e12, 50*1e16])*constants.stefan_boltzmann
+        exp = np.array([50, 50*1e4, 50*1e8, 50*1e12, 50*1e16])*physical_constants.stefan_boltzmann
         res = me.calc_P_rad(T_mh_range=T_mh_range, emissivity=emissivity,A_mh=A_mh)
         
         self.assertTrue(np.allclose(exp,res.astype('float64')))
@@ -104,7 +104,7 @@ class TestCalcMicroheaterEfficiency(unittest.TestCase):
         T_margin = 0 # [K]
         
         exp_P_delta_h = 2.61775
-        exp_P_rad = 25600000000*constants.stefan_boltzmann
+        exp_P_rad = 25600000000*physical_constants.stefan_boltzmann
 
         # Efficiency
         exp = exp_P_delta_h / (exp_P_delta_h+exp_P_rad) 
@@ -116,7 +116,7 @@ class TestCalcMicroheaterEfficiency(unittest.TestCase):
     
         res = me.calc_microheater_efficiency(T_mh_range=T_mh_range,emissivity=emissivity,A_mh=A_mh,T_in=T_in,T_margin=T_margin,m_dot=m_dot,p_chamber=p_chamber)
         exp_P_delta_h = np.array([2617.75, 2815.95])
-        exp_P_rad = np.array([25600000000, 62500000000])*constants.stefan_boltzmann
+        exp_P_rad = np.array([25600000000, 62500000000])*physical_constants.stefan_boltzmann
         exp = exp_P_delta_h / (exp_P_delta_h + exp_P_rad)
         self.assertTrue(np.allclose(res.astype('float64'),exp))
         # Same as previous function tests some mass_range, however, two inputs now
@@ -125,7 +125,7 @@ class TestCalcMicroheaterEfficiency(unittest.TestCase):
         T_mh_range = np.array([500, 600], dtype=object)
         T_margin = 100 #  [K]
         exp_P_delta_h = np.array([2617.75, 2815.95])
-        exp_P_rad = np.array([62500000000,129600000000])*constants.stefan_boltzmann
+        exp_P_rad = np.array([62500000000,129600000000])*physical_constants.stefan_boltzmann
         exp = exp_P_delta_h / (exp_P_delta_h + exp_P_rad)
         res = me.calc_microheater_efficiency(T_mh_range=T_mh_range,emissivity=emissivity,A_mh=A_mh,T_in=T_in,T_margin=T_margin,m_dot=m_dot,p_chamber=p_chamber)
         self.assertTrue(np.allclose(res.astype('float64'),exp,rtol=1e-4))

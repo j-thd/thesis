@@ -44,7 +44,6 @@ D_hydr = basic.chamber.hydraulic_diameter_rectangular(w_channel=w_channel, h_cha
 p_l = oneD.prepare_single_phase_liquid(T_inlet=T_inlet, steps=50, p_ref=p_inlet, m_dot=m_dot, fp=fp) # {dict} Dictionary of prepared values
 res_l = oneD.calc_channel_single_phase(\
     T = p_l['T'],
-    T_ref = p_l['T_ref'],
     Q_dot= p_l['Q_dot'],
     rho = p_l['rho'],
     Pr = p_l['Pr'],
@@ -163,7 +162,6 @@ mu_g = p_g['mu'] # [Pa*s]
 # Calculate channel length and other interesting values in gas phase
 res_g = oneD.calc_channel_single_phase(
     T=T_g,
-    T_ref=p_g['T_ref'],
     Q_dot=p_g['Q_dot'],
     rho=rho_g,
     Pr=Pr_g,

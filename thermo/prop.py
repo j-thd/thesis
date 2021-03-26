@@ -2,7 +2,7 @@
 # The intention is to pass around the fluid-properties constantly, to where-ever it is needed
 
 from CoolProp.CoolProp import PropsSI, PhaseSI
-import constants
+import physical_constants
 
 class FluidProperties:
     def __init__(self, fluid):
@@ -351,7 +351,7 @@ class FluidProperties:
         rho_sat_l = self.get_liquid_density_at_psat(p_sat=p_sat) # [kg/m^3] 
         rho_sat_g = self.get_vapour_density_at_psat(p_sat=p_sat) # [kg/m^3]
         
-        return (rho_sat_l-rho_sat_g)*constants.g0*L_ref**2 / surface_tension # [-]
+        return (rho_sat_l-rho_sat_g)*physical_constants.g0*L_ref**2 / surface_tension # [-]
 
     def get_temperature_from_enthalpy_and_pressure(self, h, p):
         """Return the temperature based on SPECIFIC enthalpy and pressure

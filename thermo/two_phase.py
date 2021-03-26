@@ -94,9 +94,7 @@ def Nu_Kandlikar_NBD_dryout(args):
     # Slight adaptation, the Nusselt number of the flow as entirely as liquid is inputted instead of h_le
     Nu_NBD = ( 0.6683 * rho_ratio**0.1 * x**0.16 * (1 - x)**0.64  + \
             1058 * args['Bo']**0.7 * (1 - x)**0.8 ) * args['Nu_le'] # [-] Nusselt number of nucleate boiling regime
-
-    print("Nu_NDB:")
-    print(Nu_NBD)
+            
     # Check which of three Nusselt numbers are at a maximum
     Nu = np.maximum(Nu_NBD, args['Nu_dryout']) # [-] Find the maximum of NBD and CBD
     return Nu

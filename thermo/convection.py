@@ -2,6 +2,7 @@
 
 from basic.chamber import velocity_from_mass_flow
 from thermo.prop import FluidProperties
+import numpy as np
 
 def Nu_DB(args):
     """Quick and dirty placeholder for Nusselt number from Dittus Boelter
@@ -158,7 +159,7 @@ def Nu_laminar_developed_constant_wall_temp_square(args):
     """Nusselt number for fully developed laminar flow in a square channel
     with constant wall temperature
     """
-    return 3.66
+    return 3.66*np.ones_like(args['Re'])
 
 def Nu_laminiar_developed_constant_heat_flux_square(args):
     """Nusselt number for fully developed laminiar flow in a square channel

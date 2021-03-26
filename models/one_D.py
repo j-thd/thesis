@@ -30,7 +30,7 @@ def prepare_single_phase_liquid(T_inlet, steps, p_ref, m_dot, fp: FluidPropertie
     # The reference temperature for heat transfer calculations
     # The first value [0] should not be important. The heat transfer calculated at i is between i-1 and i
     #  So, from T[i-1] to T[i]. So, if there reference temperature is the average dT/2 must SUBTRACTED
-    T_ref = T - dT/2 # [K] Reference temperature for heat transfer calculations
+    #T_ref = T - dT/2 # [K] Reference temperature for heat transfer calculations
 
     ## Get all thermodynamic values that can be precalculated
     # NOTE: all last values must be replaced with the correct values for the saturated liquid state
@@ -58,7 +58,6 @@ def prepare_single_phase_liquid(T_inlet, steps, p_ref, m_dot, fp: FluidPropertie
     mu[-1] = fp.get_liquid_saturation_viscosity(p_sat=p_ref) # [Pa*s] Saturation viscosity
     return {\
         "T":T, # [K]
-        "T_ref": T_ref, # [K] The reference value for calculating heat transfer in a section
         "dT": dT, # [K]
         "rho": rho, # [kg/m^3]
         "h": h, # [J/kg]
@@ -68,7 +67,7 @@ def prepare_single_phase_liquid(T_inlet, steps, p_ref, m_dot, fp: FluidPropertie
         "mu": mu, # [Pa*s]
         }
 
-def calc_channel_single_phase(T, T_ref, Q_dot, rho, Pr, kappa, mu, p_ref, m_dot, T_wall, D_hydr, wetted_perimeter, A_channel, Nu_func, fp: FluidProperties):
+def calc_channel_single_phase(T, Q_dot, rho, Pr, kappa, mu, p_ref, m_dot, T_wall, D_hydr, wetted_perimeter, A_channel, Nu_func, fp: FluidProperties):
     """ Calculate channel length and intermediate variables by using a constant temperature step DT
         Using DT should give the best accuracy for computation time
         Must be a single-phase channel.
@@ -218,10 +217,6 @@ def calc_homogenous_transition(p_sat, x, alpha, T_sat, rho_l, rho_g, rho, m_dot,
                 'Nu_dryout': Nu_dryout,
                 }
     Nu = Nu_func_tp(args=args) # [-] Two-phase Nusselt number
-    print("Nu:")
-    print(Nu)
-    print("Nu_dryout:")
-    print(Nu_dryout)
 
     # The Nusselt number is calculated in relation to liquid thermal conducitvity only
     h_conv = heat_transfer_coefficient_from_Nu(Nu=Nu, kappa=kappa_l, L_ref=D_hydr) # [W/(m^2 * K)] Heat transfer coefficient
@@ -253,7 +248,7 @@ def prepare_single_phase_gas(T_outlet, steps, p_ref, m_dot, fp: FluidProperties)
     # The reference temperature for heat transfer calculations
     # The first value [0] should not be important. The heat transfer calculated at i is between i-1 and i
     #  So, from T[i-1] to T[i]. So, if there reference temperature is the average dT/2 must SUBTRACTED
-    T_ref = T - dT/2 # [K] Reference temperature for heat transfer calculations
+    #T_ref = T - dT/2 # [K] Reference temperature for heat transfer calculations
 
     ## Get all thermodynamic values that can be precalculated
     # NOTE: all first values must be replaced with the correct values for the saturated gas state
@@ -282,7 +277,6 @@ def prepare_single_phase_gas(T_outlet, steps, p_ref, m_dot, fp: FluidProperties)
     return {\
         "T":T, # [K]
         "dT": dT, # [K]
-        "T_ref": T_ref, # [K]
         "rho": rho, # [kg/m^3]
         "h": h, # [J/kg]
         "Q_dot": Q_dot, # [W]
@@ -291,3 +285,109 @@ def prepare_single_phase_gas(T_outlet, steps, p_ref, m_dot, fp: FluidProperties)
         "mu": mu, # [Pa*s]
         }
     
+def full_homogenous_preparation(T_inlet, T_outlet, m_dot, p_ref, steps_l, steps_tp, steps_g, fp:FluidProperties):
+
+    p_l = prepare_single_phase_liquid(
+        T_inlet=T_inlet,
+        steps=steps_l,
+        p_ref=p_ref,
+        m_dot=m_dot,
+        fp=fp
+    )
+
+    p_tp = prepare_homogenous_transition(
+        p=p_ref,
+        m_dot=m_dot,
+        steps=steps_tp,
+        fp = fp
+    )
+
+    p_g = prepare_single_phase_gas(
+        T_outlet=T_outlet,
+        steps=steps_g,
+        p_ref=p_ref,
+        m_dot=m_dot,
+        fp=fp
+    )  
+    ## Dictionary of prepared values
+    return {
+        'p_l': p_l,
+        'p_tp': p_tp,
+        'p_g': p_g
+        }
+
+def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, wetted_perimeter, D_hydraulic, m_dot, T_wall, p_ref, fp: FluidProperties):
+    # Unpack prepared values
+    p_l = prepared_values['p_l']
+    p_tp = prepared_values['p_tp']
+    p_g = prepared_values['p_g']
+
+    res_l = calc_channel_single_phase(
+        T = p_l['T'],
+        Q_dot= p_l['Q_dot'],
+        rho = p_l['rho'],
+        Pr = p_l['Pr'],
+        kappa = p_l['kappa'],
+        mu = p_l['mu'],
+        p_ref=p_ref,
+        m_dot=m_dot,
+        T_wall=T_wall,
+        D_hydr=D_hydraulic,
+        wetted_perimeter=wetted_perimeter,
+        A_channel=A_channel,
+        Nu_func=Nusselt_relations['Nu_func_liquid'],
+        fp=fp
+    )
+
+    res_tp = calc_homogenous_transition(
+        p_sat=p_ref,
+        x=p_tp['x'],
+        alpha=p_tp['alpha'],
+        T_sat=p_tp['T_sat'],
+        rho_l=p_tp['rho_l'],
+        rho_g=p_tp['rho_g'],
+        rho=p_tp['rho'],
+        m_dot=m_dot,
+        mu_l=p_tp['mu_l'],
+        mu=p_tp['mu'],
+        Pr_l=p_tp['Pr_l'],
+        Pr=p_tp['Pr'],
+        kappa_l=p_tp['kappa_l'],
+        kappa=p_tp['kappa'],
+        Q_dot=p_tp['Q_dot'],
+        T_wall=T_wall,
+        D_hydr=D_hydraulic,
+        wetted_perimeter=wetted_perimeter,
+        A_channel=A_channel,
+        Nu_func_tp=Nusselt_relations['Nu_func_two_phase'],
+        Nu_func_le=Nusselt_relations['Nu_func_le'],
+        Nu_func_dryout=Nusselt_relations['Nu_func_dryout'],
+        fp=fp
+    )
+
+    res_g = calc_channel_single_phase(
+        T=p_g['T'],
+        Q_dot=p_g['Q_dot'],
+        rho=p_g['rho'],
+        Pr=p_g['Pr'],
+        kappa=p_g['kappa'],
+        mu=p_g['mu'],
+        p_ref=p_ref,
+        m_dot=m_dot,
+        T_wall=T_wall,
+        D_hydr=D_hydraulic,
+        wetted_perimeter=wetted_perimeter,
+        A_channel=A_channel,
+        Nu_func=Nusselt_relations['Nu_func_gas'],
+        fp=fp
+    )
+
+    # Calculate the total length of all sections, which is the sum of the last elements in each length array
+    L_total = res_l['L'][-1] + res_tp['L'][-1] + res_g['L'][-1] # [m]
+
+    return {
+        'res_l': res_l,
+        'res_tp': res_tp,
+        'res_g': res_g,
+        'L_total': L_total
+    }

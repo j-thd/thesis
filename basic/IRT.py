@@ -1,6 +1,6 @@
 # File for basic IRT functions
 # For source of equation check appendix A of literature study
-from constants import g0
+from physical_constants import g0
 from sys import float_info
 import math
 from scipy import optimize

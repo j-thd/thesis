@@ -73,10 +73,6 @@ class TestPrepareSinglePhaseLiquid(unittest.TestCase):
         exp_dT = (393.36-300)/9 # [K] temperature step
         self.assertAlmostEqual(exp_dT, self.prep['dT'], delta=1e-6*exp_dT)
 
-    def testReferenceTemperature(self):
-        # Check if if T_ref_i is indeed half-way between T_i-1 and T_i ()
-        exp_T_ref = 300 + (393.36-300)*(1/9)/2
-        self.assertAlmostEqual(exp_T_ref, self.prep['T_ref'][1],delta=exp_T_ref*1e-5)
 
 
 class TestCalcSinglePhase(unittest.TestCase):
@@ -104,7 +100,6 @@ class TestCalcSinglePhase(unittest.TestCase):
 
         self.res = oneD.calc_channel_single_phase(\
             T = self.prep['T'],
-            T_ref = self.prep['T_ref'],
             Q_dot= self.prep['Q_dot'],
             rho = self.prep['rho'],
             Pr = self.prep['Pr'],
@@ -219,10 +214,6 @@ class TestPrepareSinglePhaseGas(unittest.TestCase):
         exp_dT = (450-393.36)/9 # [K] temperature step
         self.assertAlmostEqual(exp_dT, self.prep['dT'], delta=1e-5*exp_dT)
 
-    def testReferenceTemperature(self):
-        # Check if if T_ref_i is indeed half-way between T_i-1 and T_i ()
-        exp_T_ref = 393.36 + (450-393.36)*(1/9)/2
-        self.assertAlmostEqual(exp_T_ref, self.prep['T_ref'][1],delta=exp_T_ref*1e-5)
 
 class TestPrepareHomogeneousTransition(unittest.TestCase):
     def setUp(self):
