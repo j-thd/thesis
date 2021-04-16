@@ -106,6 +106,9 @@ for T in it_T:
     L_1[it_T.index] = results_1['L_total']
     L_2[it_T.index] = results_2['L_total']
 
+print("Thruster name:")
+print(td['name'])
+
 plt.figure()
 plt.title("1D Two-phase model applied to Silva #5")
 plt.plot(T_wall,L_1*1e3, label="Turbulent (Kandlikar Re<100 with Dittus Boelter)")

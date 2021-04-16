@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from constants import stefan_boltzmann
+from physical_constants import stefan_boltzmann
 from thermo.prop import FluidProperties
 
 def calc_P_delta_h(T_in,T_out,m_dot,p_chamber):
@@ -192,14 +192,16 @@ def run2():
     p = 5.15e5 # [Pa] Pressure
     P_total = 8.19 # [W] Total electrical power
 
+    fp = FluidProperties("water")
+
     # Specific enthalpy at inlet and outlet
-    h_in = water.get_enthalpy(T=T_in, p=p) # [J/kg] Inlet
-    h_out = water.get_enthalpy(T=T_out, p=p) # [J/kg] Outlet
+    h_in = fp.get_enthalpy(T=T_in, p=p) # [J/kg] Inlet
+    h_out = fp.get_enthalpy(T=T_out, p=p) # [J/kg] Outlet
     
     P_delta_h = m_dot*(h_out-h_in) # [W] Power raising enthalpy
     efficiency = P_delta_h/P_total # [-]
 
-    print("Exit phase: {}".format(water.get_phase(T=T_out,p=p)))
+    print("Exit phase: {}".format(fp.get_phase(T=T_out,p=p)))
 
     print("P_delta_h: {:1.2f} W".format(P_delta_h))
     print("Micro-heater efficiency: {:1.2f} ".format(efficiency))

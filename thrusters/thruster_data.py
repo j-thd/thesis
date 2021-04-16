@@ -54,7 +54,7 @@ Cen2010_1 = {
     "channel_amount": 9, # [-]
     "p_inlet": 1.28e5, # [Pa]
     "T_inlet": 300, # [K] TBD
-    "p_back": None, # [Pa]
+    "p_back": 0, # [Pa]
     "h_channel": 120e-6, # [m]
     "w_channel": 80e-6, # [m]
     "L_channel": 6e-3, # [m]  
@@ -62,6 +62,119 @@ Cen2010_1 = {
     "w_throat": 150e-6, # [m]
     "AR_exit": 11.72, # [-]
     "w_nozzle_exit": 1758e-6, # [m]
+    "L_nozzle": 3000e-6, # [m] Nozzle length
+    "divergent_half_angle": math.radians(15), # [rad]
+    "T_chamber_guess": 571.90, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
+    }
+
+Cen2010_2 = {
+    "name": "Cen2010 3.00mg/s",
+    "propellant": "water",
+    "F": 3.0e-3, # [N]
+    "m_dot": 3.00e-6, # [kg/s]
+    "T_chamber": None , # [K]
+    "T_wall": 573.15, # [K] TBD
+    "channel_amount": 9, # [-]
+    "p_inlet": 1.52e5, # [Pa]
+    "T_inlet": 300, # [K] TBD
+    "p_back": 0, # [Pa]
+    "h_channel": 120e-6, # [m]
+    "w_channel": 80e-6, # [m]
+    "L_channel": 6e-3, # [m]  
+    "h_throat": 120e-6, # [m]
+    "w_throat": 150e-6, # [m]
+    "AR_exit": 11.72, # [-]
+    "w_nozzle_exit": 1758e-6, # [m]
+    "divergent_half_angle": math.radians(15), # [rad]
+    "T_chamber_guess": 570.80, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
+    }
+
+Cen2010_3 = {
+    "name": "Cen2010 3.66mg/s",
+    "propellant": "water",
+    "F": 3.8e-3, # [N]
+    "m_dot": 3.66e-6, # [kg/s]
+    "T_chamber": None , # [K]
+    "T_wall": 573.15, # [K] TBD
+    "channel_amount": 9, # [-]
+    "p_inlet": 1.80e5, # [Pa]
+    "T_inlet": 300, # [K] TBD
+    "p_back": 0, # [Pa]
+    "h_channel": 120e-6, # [m]
+    "w_channel": 80e-6, # [m]
+    "L_channel": 6e-3, # [m]  
+    "h_throat": 120e-6, # [m]
+    "w_throat": 150e-6, # [m]
+    "AR_exit": 11.72, # [-]
+    "w_nozzle_exit": 1758e-6, # [m]
+    "divergent_half_angle": math.radians(15), # [rad]
+    "T_chamber_guess": 568.86, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
+    }
+
+Cen2010_4 = {
+    "name": "Cen2010 4.33mg/s",
+    "propellant": "water",
+    "F": 4.5e-3, # [N]
+    "m_dot": 4.33e-6, # [kg/s]
+    "T_chamber": None , # [K]
+    "T_wall": 573.15, # [K] TBD
+    "channel_amount": 9, # [-]
+    "p_inlet": 2.08e5, # [Pa]
+    "T_inlet": 300, # [K] TBD
+    "p_back": 0, # [Pa]
+    "h_channel": 120e-6, # [m]
+    "w_channel": 80e-6, # [m]
+    "L_channel": 6e-3, # [m]  
+    "h_throat": 120e-6, # [m]
+    "w_throat": 150e-6, # [m]
+    "AR_exit": 11.72, # [-]
+    "w_nozzle_exit": 1758e-6, # [m]
+    "divergent_half_angle": math.radians(15), # [rad]
+    "T_chamber_guess": 565.95, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
+    }
+
+Cen2010_5 = {
+    "name": "Cen2010 5.00mg/s",
+    "propellant": "water",
+    "F": 5.2e-3, # [N]
+    "m_dot": 5.00e-6, # [kg/s]
+    "T_chamber": None , # [K]
+    "T_wall": 573.15, # [K] TBD
+    "channel_amount": 9, # [-]
+    "p_inlet": 2.28e5, # [Pa]
+    "T_inlet": 300, # [K] TBD
+    "p_back": 0, # [Pa]
+    "h_channel": 120e-6, # [m]
+    "w_channel": 80e-6, # [m]
+    "L_channel": 6e-3, # [m]  
+    "h_throat": 120e-6, # [m]
+    "w_throat": 150e-6, # [m]
+    "AR_exit": 11.72, # [-]
+    "w_nozzle_exit": 1758e-6, # [m]
+    "divergent_half_angle": math.radians(15), # [rad]
+    "T_chamber_guess": 562.22, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
+    }
+
+Cen2010_6 = {
+    "name": "Cen2010 5.66mg/s",
+    "propellant": "water",
+    "F": 5.7e-3, # [N]
+    "m_dot": 5.66e-6, # [kg/s]
+    "T_chamber": None , # [K]
+    "T_wall": 573.15, # [K] TBD
+    "channel_amount": 9, # [-]
+    "p_inlet": 2.52e5, # [Pa]
+    "T_inlet": 300, # [K] TBD
+    "p_back": 0, # [Pa]
+    "h_channel": 120e-6, # [m]
+    "w_channel": 80e-6, # [m]
+    "L_channel": 6e-3, # [m]  
+    "h_throat": 120e-6, # [m]
+    "w_throat": 150e-6, # [m]
+    "AR_exit": 11.72, # [-]
+    "w_nozzle_exit": 1758e-6, # [m]
+    "divergent_half_angle": math.radians(15), # [rad]
+    "T_chamber_guess": 557.80, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
     }
 
 td_verification_one = {

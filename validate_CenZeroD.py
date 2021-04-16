@@ -73,7 +73,8 @@ for T in it:
     # Store results
     L_channel_3[it.index] = res_3['L_channel'] 
 
-#print(T_wall)
+print("Thruster name:")
+print(td['name'])
 
 plt.plot(T_chamber, L_channel_1*1e3, label="DB - DB")
 plt.plot(T_chamber, L_channel_2*1e3, label="FD Laminar - DB")

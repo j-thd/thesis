@@ -33,7 +33,7 @@ def viscous_loss(area_ratio, reynolds_throat_wall):
         area_ratio (-): Exit area/throat area
         reynolds_throat_wall (-): Reynolds number at the throat wall
     """
-
+    print("Reynolds throat wall: {:3.2f}".format(reynolds_throat_wall))
     return 17.6*math.exp(0.0032*area_ratio)/math.sqrt(reynolds_throat_wall)
 
 def Reynolds_throat_wall_cold(reynolds_throat):
