@@ -27,7 +27,7 @@ td_Silva_5 = {
     "F": 0.67e-3, # [N]
     "m_dot": 0.55e-6, # [kg/s]
     "T_chamber": 423.03 , # [K]
-    "T_wall": 273.15+200, # [K] Wall temperature is hard to determine from paper (seems low)
+    "T_wall": None, # [K] Wall temperature is hard to determine from paper (seems low)
     "channel_amount": 5, # [-]
     "p_inlet": 4.8e5, # [Pa]
     "T_inlet": 297.15, # [K] Room temperature of 24 degrees mentioned in report

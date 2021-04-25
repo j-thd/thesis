@@ -23,10 +23,10 @@ Nu_func_dryout = thermo.two_phase.Nu_DB_two_phase #thermo.two_phase.Nu_DB_two_ph
 #bla
 # For da Silva's thrusters the numbers have to fudged a bit, because the reported temperatures
 # seem inconsitent with saturation temperatures and/or reported wall temperatures
-T_wall = td['T_wall'] + 100                 # [K] Wall temperature
+T_wall = 600                            # [K] Wall temperature
 w_channel = td['w_channel']             # [m] Channel width
 T_inlet = td['T_inlet']                 # [K] Inlet temperature
-T_chamber = td['T_chamber']+100         # [K] Chamber temperature
+T_chamber = 500                         # [K] Chamber temperature
 p_inlet = td['p_inlet']                 # [Pa] Inlet pressure
 m_dot = td['m_dot']                     # [kg/s] Mass flow (through all channels if multiple)
 channel_amount = td['channel_amount']   # [-] Amount of channels
@@ -218,30 +218,30 @@ axs[0][0].plot(L*1e3, T)
 axs[0][0].set_ylabel("Temperature T [K]")
 axs[0][0].grid()
 # Middle left
-axs[1][0].plot(L*1e3, Nu)
-axs[1][0].set_ylabel("Nu [-]")
+axs[1][0].plot(L*1e3, h_conv)
+axs[1][0].set_ylabel("$h_{conv}$ [Wm$^{{-1}}$K$^{{-1}}$)]")
 axs[1][0].grid() 
 # Bottom left
-axs[2][0].plot(L*1e3, rho)
-axs[2][0].set_ylabel("Density $\\rho$ [kg$\\cdot$m$^{{-3}}$]")
+axs[2][0].plot(L*1e3, Nu)
+axs[2][0].set_ylabel("Nu [-]")
 axs[2][0].set_xlabel("Distance $x$ [mm]")
 axs[2][0].grid()
 # Top center
-axs[0][1].plot(L*1e3, mu)
-axs[0][1].set_ylabel("mu [Pa*s]")
+axs[0][1].plot(L*1e3, rho)
+axs[0][1].set_ylabel("Density $\\rho$ [kg$\\cdot$m$^{{-3}}$]")
 axs[0][1].grid()
 # Middle center
-axs[1][1].plot(L*1e3, Pr)
-axs[1][1].set_ylabel("Prandtl Pr [-]")
+axs[1][1].plot(L*1e3, x)
+axs[1][1].set_ylabel("Vapour quality [-]")
 axs[1][1].grid()
 # Bottom center
-axs[2][1].plot(L*1e3, u)
-axs[2][1].set_ylabel("Velocity $u$ [m/s] ")
+axs[2][1].plot(L*1e3, Pr)
+axs[2][1].set_ylabel("Prandtl $Pr$ [-] ")
 axs[2][1].set_xlabel("Distance $x$ [mm]")
 axs[2][1].grid()
 ## Top right
-axs[0][2].plot(L*1e3, h_conv)
-axs[0][2].set_ylabel("Convective heat flux parameter [W/m*K] ")
+axs[0][2].plot(L*1e3, u)
+axs[0][2].set_ylabel("Velocity $u$ [m$\\cdot$s$^{{-1}}$]")
 axs[0][2].grid()
 ## Middle right
 axs[1][2].plot(L*1e3, alpha)

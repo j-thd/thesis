@@ -13,7 +13,7 @@ from thermo.prop import FluidProperties
 td = thrusters.thruster_data.td_Silva_5 # Dictionary with design/measured values
 
 # Fidelity of simulatoin
-steps_per_section = 50 # [-] Amount of subdivision in each section 
+steps_per_section = 200 # [-] Amount of subdivision in each section 
 steps_l = steps_per_section
 steps_tp = steps_per_section
 steps_g = steps_per_section
@@ -42,7 +42,7 @@ Nusselt_relations_2 = {
 # seem inconsitent with saturation temperatures and/or reported wall temperatures
 w_channel = td['w_channel']             # [m] Channel width
 T_inlet = td['T_inlet']                 # [K] Inlet temperature
-T_chamber = td['T_chamber'] +1          # [K] Chamber temperature <--- NOTE: this is where the number is increased by 1, because it's below saturatoin temperature otherwise
+T_chamber = td['T_chamber'] +0.5          # [K] Chamber temperature <--- NOTE: this is where the number is increased by 0.5K, because it's below saturatoin temperature otherwise
 p_inlet = td['p_inlet']                 # [Pa] Inlet pressure
 m_dot = td['m_dot']                     # [kg/s] Mass flow (through all channels if multiple)
 channel_amount = td['channel_amount']   # [-] Amount of channels
@@ -53,7 +53,7 @@ fp = FluidProperties(td['propellant'])  # Object from which fluid properties can
 m_dot_channel = m_dot/channel_amount    # [kg/s] Mass flow through one single channel
 
 # Wall temperature is unknown, so a range is taken
-T_wall = np.linspace(start=T_chamber+0.5, stop=700, num=5000) # [K]
+T_wall = np.linspace(start=T_chamber+0.01, stop=600, num=5000) # [K]
 
 # Geometric values
 wetted_perimeter = basic.chamber.wetter_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Wetted perimeter of channel
@@ -111,11 +111,12 @@ print(td['name'])
 
 plt.figure()
 plt.title("1D Two-phase model applied to Silva #5")
-plt.plot(T_wall,L_1*1e3, label="Turbulent (Kandlikar Re<100 with Dittus Boelter)")
-plt.plot(T_wall,L_2*1e3, label="Laminar (Kandlikar Re<100 with Fully Developed Laminar Flow)")
+plt.plot(T_wall,L_1*1e3, label="Turbulent")
+plt.plot(T_wall,L_2*1e3, label="Laminar")
 plt.xlabel("Wall temperature - $T_{{wall}}$ [K]")
 plt.ylabel("Channel length - $L$ [m]")
 plt.hlines(td['L_channel']*1e3, xmin=T_wall[0], xmax=T_wall[-1], linestyle='dashed', color='red', label="Real length")
+plt.ylim([0,td['L_channel']*2e3])
 plt.grid()
 plt.legend()
 plt.tight_layout(pad=1.0)
