@@ -2,7 +2,7 @@
 Useful for determining wich relations are interesting and which are not
 """
 
-from basic.chamber import ideal_enthalpy_change, velocity_from_mass_flow, wetter_perimeter_rectangular
+from basic.chamber import ideal_enthalpy_change, velocity_from_mass_flow, wetted_perimeter_rectangular
 from basic.IRT_corrections import hydraulic_diameter
 from thermo.prop import FluidProperties
 
@@ -18,7 +18,7 @@ m_dot = 3.6e-6 # [kg/s]
 
 # Hydraulic diameter and area
 A_channel = h_channel*w_channel # [m^2] Channel area through which fluid flows
-wetted_perimeter  = wetter_perimeter_rectangular(w_channel=w_channel,h_channel=h_channel) # [m] Wetted perimeter
+wetted_perimeter  = wetted_perimeter_rectangular(w_channel=w_channel,h_channel=h_channel) # [m] Wetted perimeter
 D_h = hydraulic_diameter(A=A_channel, wetted_perimeter=wetted_perimeter) # [m]
 
 print("\n Hydraulic diameter: {:4.4f} um".format(D_h*1e6))

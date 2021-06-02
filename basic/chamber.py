@@ -1,4 +1,6 @@
+import math
 import numpy as np
+import scipy.optimize
 from physical_constants import stefan_boltzmann, g0
 from thermo.prop import FluidProperties
 
@@ -79,16 +81,28 @@ def radiation_loss(T, A, emmisivity):
     #print("Temperature**4: {} ".format(T**4))
     #print(type(A))
     A = float(A)
-    print("Area: {}".format(A))
+    #print("Area: {}".format(A))
     #print(type(A))
     #print(type(emmisivity))
     emmisivity = float(emmisivity)
     #print(type(emmisivity))
     #print(type(stefan_boltzmann))
-    P_rad = emmisivity * A * stefan_boltzmann * T**4
-    print("P_rad: {}".format(P_rad))
+    #P_rad = emmisivity * A * stefan_boltzmann * T**4
+    #print("P_rad: {}".format(P_rad))
     #print(type(P_rad))
     return emmisivity * A * stefan_boltzmann * T**4
+
+def radiation_loss_numpy(T_np_array, A, emmisivity):
+    # T must become iterable to convert each temperature to a Python float (to prevent overflow in numpy float objects when T**4)
+    T_iter = np.nditer(T_np_array, flags=['c_index']) # [K] 
+    P_rad = np.zeros_like(T_np_array)
+
+    for T_i in T_iter:
+        T = float(T_i) # [K] Convert temperature to Python Float
+        P_rad[T_iter.index] = emmisivity * A * stefan_boltzmann * T**4 # [W]
+
+    return P_rad
+    
 
 def convective_heat_flow(heat_transfer_coefficient, T_wall, T_ref, A_wall):
     """Return the heat flow due to any form of heat transfer (such as convection or conduction)
@@ -147,7 +161,7 @@ def h_conv_from_Stanton(Stanton, u, T_ref, p_ref, fp: FluidProperties):
 
     return Stanton*rho*u*cp # [W/(m^2*K)] h_conv: Convective heat transfer coefficient
 
-def wetter_perimeter_rectangular(w_channel, h_channel):
+def wetted_perimeter_rectangular(w_channel, h_channel):
     """Calculate the wetted perimeter (for hydraulic diameters) of a rectangular channel
 
     Args:
@@ -170,7 +184,7 @@ def hydraulic_diameter_rectangular(w_channel, h_channel):
         D_h (m): Hydraulic diameter of a rectangular channel
     """
     A = w_channel*h_channel # [m^2] Channel cross-sectional area`
-    P = wetter_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Wetted perimeter of channel
+    P = wetted_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Wetted perimeter of channel
 
     return 4 * A / P # [m] 
 
@@ -265,3 +279,90 @@ def delta_enthalpy_per_section(h):
     # Make the first element zero to make the array conventiently precisely as long as T. Arbitrary choice as to whether last or first element is zero
     delta_h = np.hstack((0, np.diff(h))) # [J/kg]
     return delta_h
+
+def total_chip_width(channel_amount, w_channel, w_channel_spacing, w_outer_margin, w_throat, AR_exit):
+    """Calculate total chip width, based on channel design and margins.
+
+    The outer chip width must check whether the nozzle exit or exit width is more important.
+    NOTE: Does not take into account if inlet margin is smaller or bigger
+
+    Args:
+        channel_amount (-): Amount of channels
+        w_channel (m): Width of heatnig channel
+        w_channel_spacing (m): Spacing between channels
+        w_outer_margin (m): Spacing around the outside of outer channels
+
+    Returns:
+        w_chip: (m) Total width of chip
+    """
+
+    heater_width_with_margin = 2* w_outer_margin + channel_amount*w_channel + (channel_amount-1)*w_channel_spacing # [m]
+    w_nozzle_exit_with_margin = 2* w_outer_margin + w_throat*AR_exit # [m]
+
+    return np.maximum( heater_width_with_margin , w_nozzle_exit_with_margin )# [m] Total width of chip
+
+def total_chip_length(l_inlet, l_channel, l_outlet):
+    """ Return total channel length
+
+    Args:
+        l_inlet (m): Inlet length (manifold, etc.)
+        l_channel (m): Heating channel length
+        l_outlet (m): Exit manifold + nozzle length
+
+    Returns:
+        l_chip: (m) Total chip length
+    """
+    return l_inlet + l_channel + l_outlet
+
+def outlet_length(w_channel, w_channel_spacing, channel_amount, convergent_half_angle, w_throat, divergent_half_angle, AR_exit, l_exit_manifold=0.0):
+    """Calculate the outlet length (entire nozzle + exit manifold) of a channel for the purpose of determining the entire rectangular chip size
+
+    Args:
+        w_channel (m): Channel width
+        w_channel_spacing (m): Spacing between channels
+        channel_amount (-): Amount of parallel channels
+        convergent_half_angle (rad): Half-angle of convergent nozzle part
+        w_throat (m): width
+        divergent_half_angle (rad): Half-angle of divergent nozzle part
+        AR_exit (-): Exit area ratio
+        l_exit_manifold (m, optional): Length of exit manifold, before convergent nozzle section begins. Defaults to 0.
+
+    Returns:
+        l_outlet (m): Total outlet length
+    """
+    # The exit manifold length determines the convergent part of the nozzle length, if a convergent angle is chosen to be fixed
+    w_exit_manifold = channel_amount * w_channel + (channel_amount-1) * w_channel_spacing # [m] Total width of exit manifold (before feeding into nozzle)
+    # L is the length of the virtual right-angled triangle that would appear if the nozzle was 0 micron wide.
+    L_conv = 0.5*w_exit_manifold/math.tan(convergent_half_angle) # [m] Virtual nozzle length
+    # Now the actual length
+    l_convergent = L_conv * ( 1 - w_throat/w_exit_manifold ) # [m] Length of virtual convergent triangle up to throat 
+    # The same process but for the exit
+    L_div = 0.5*w_throat*AR_exit / math.tan(divergent_half_angle)
+    l_divergent = L_div * ( 1 - 1/AR_exit) # [m] Length form virtual divergent triangle from the throat 
+
+    return l_convergent + l_divergent + l_exit_manifold # [m] Total outlet length
+
+def basic_substrate_heat_loss(T_top, kappa, emissivity, thickness, A_substrate):
+    """Determine the heat loss through the substrate the chip is mounted on, by assuming it only conducts through it and radiates away
+        Equations are solved by equation conduction and radiation
+
+    Args:
+        T_top (K): Temperature of Top of substrate
+        kappa (W/(m*K)): Thermal conductivity of substrate
+        emissivity (-): Emissivity of substrate
+        thickness (m): Thickness of substrate
+        A_substrate (m^2): Area of substrate (assumed to chip area connected to it, and area through which it radiates are the same)
+
+    Returns:
+        P_loss: (W) Heat loss through bottom of substrate
+    """
+
+    # T is the unknown temperature of the bottom side of the substrate. For the correct solution, the radiation and conduction are equal
+    func_radiation = lambda T: emissivity*float(T)**4*stefan_boltzmann # [W/m^2] Radiative heat flux
+    func_conduction = lambda T: kappa*(T_top - T) / thickness # [W/m^2] 
+    func_equilibrium = lambda T: func_radiation(T) - func_conduction(T) # [W/m^2] Conservation of energy 
+    
+    sol = scipy.optimize.root_scalar(func_equilibrium,bracket=([240,T_top]))
+    T_bottom = sol.root # [K] The root that puts heat fluxes in equilibrium
+    P_loss = func_conduction(T_bottom) * A_substrate # [W] The actual power loss (could also be multiplied with radation heat flux)
+    return P_loss # [W]

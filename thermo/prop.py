@@ -284,6 +284,7 @@ class FluidProperties:
         Returns:
             Re (-): Reynolds number
         """
+
         viscosity = self.get_viscosity(T=T, p=p) # [Pa*s]
         rho = self.get_density(T=T, p=p) # [kg/m^3] density
         u = m_dot/(rho*A)

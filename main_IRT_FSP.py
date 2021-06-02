@@ -1,5 +1,5 @@
 from basic.IRT_corrections import  hydraulic_diameter
-from basic.chamber import wetter_perimeter_rectangular
+from basic.chamber import wetted_perimeter_rectangular
 import numpy as np
 from thermo.prop import FluidProperties
 import models.zero_D as zD
@@ -94,7 +94,7 @@ fig, axs = plt.subplots(5,2)
 # Render the mass flow and throat width as a function of temperature and area ratios
 w_throat = A_throat / h_channel # [m] Throat width, determined by assuming channel depth
 # Find out the hydraulic diameter for a rectangular channel
-wetted_perimeter  = wetter_perimeter_rectangular(w_channel=w_throat, h_channel=h_channel) # [m] Wetted perimeter
+wetted_perimeter  = wetted_perimeter_rectangular(w_channel=w_throat, h_channel=h_channel) # [m] Wetted perimeter
 D_hydraulic_throat = hydraulic_diameter(A=A_throat, wetted_perimeter=wetted_perimeter) # [m] Hydraulic diameter
 # Numpy and CoolProp don't play nicely together, so iterate over each element to calculate Reynolds's number
 it_AR.reset()

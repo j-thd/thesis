@@ -1,7 +1,8 @@
 ## File to contain the 1D- model calculations. Heat flux relations, etc... come from elsewhere
 
 from thermo.prop import FluidProperties
-from basic.chamber import velocity_from_mass_flow, Reynolds_from_mass_flow, required_power, required_heater_area, Froude_number, delta_enthalpy_per_section
+from basic.chamber import velocity_from_mass_flow, Reynolds_from_mass_flow, required_power, required_heater_area, Froude_number, delta_enthalpy_per_section,\
+    wetted_perimeter_rectangular, hydraulic_diameter_rectangular
 from thermo.convection import heat_transfer_coefficient_from_Nu
 import thermo.two_phase as tp
 import numpy as np
@@ -108,6 +109,7 @@ def calc_channel_single_phase(T, Q_dot, rho, Pr, kappa, mu, p_ref, m_dot, T_wall
         'Re': Re, # [-] Reynolds number (based on L_ref)
         'u': u, # [m/s] Flow velocity
         'h_conv': h_conv, # [W/(m*K)] Convective heat transfer parameter 
+        'delta_L': delta_L, # [m] Length of each section
     }
 
 ## Two functions for multi-phase saturation phase from x=0 to x=1
@@ -227,6 +229,7 @@ def calc_homogenous_transition(p_sat, x, alpha, T_sat, rho_l, rho_g, rho, m_dot,
 
     return {
         'L': L,
+        'delta_L': delta_L,
         'u': u,
         'rho': rho,
         'Re': Re,
@@ -316,7 +319,7 @@ def full_homogenous_preparation(T_inlet, T_outlet, m_dot, p_ref, steps_l, steps_
         'p_g': p_g
         }
 
-def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, wetted_perimeter, D_hydraulic, m_dot, T_wall, p_ref, fp: FluidProperties):
+def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, wetted_perimeter, D_hydraulic, m_dot, T_wall, p_ref, fp: FluidProperties, pressure_drop_relations=None):
     # Unpack prepared values
     p_l = prepared_values['p_l']
     p_tp = prepared_values['p_tp']
@@ -384,10 +387,107 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
 
     # Calculate the total length of all sections, which is the sum of the last elements in each length array
     L_total = res_l['L'][-1] + res_tp['L'][-1] + res_g['L'][-1] # [m]
+    # If necessary, calculate the pressure drop
+    dP_total = None # [Pa] The pressure drop is returned as None if none is caluclated
+    p_chamber = None # [Pa] The chamber pressure is returned as None if no pressure drop is calculated. It is purposefully not set to p_ref or p_inlet, as the user must be aware of which value he uses
+    if (pressure_drop_relations is not None):
+        
+        ## Two-phase-arguments
+        args_tp = {
+            'x': p_tp['x'], # [-] Array of vapour quality
+            'Re_tp_l' : res_tp['Re'][0], # [-] Reynolds number for x=0
+            'Re_tp_g' : res_tp['Re'][-1],   # [-] Similary, x=1
+            'rho_tp_l': p_tp['rho'][0], # [kg/m^3] Liquid density when x=0
+            'rho_tp_g': p_tp['rho'][-1], # [kg/m^3] Gas density when x=1
+            'u_tp_l': res_tp['u'][0], # [m/s] Liquid Velocity for x=0
+            'u_tp_g': res_tp['u'][-1], # [m/s] Gas Velocity for x=1
+            'D_hydraulic': D_hydraulic, # [m] Hydraulic diameter
+            'delta_L_tp': res_tp['delta_L'], # Size of meshes
+        }
+        
+        # Gas arguments
+        args_g = {
+            'Re' : res_g['Re'], # [-] Reynolds number for x=0
+            'rho': p_g['rho'], # [kg/m^3] Density
+            'u': res_g['u'], # [m/s] Velocity
+            'D_hydraulic': D_hydraulic, # [m] Hydraulic diameter
+            'delta_L_tp': res_g['delta_L'], # Size of meshes
+        }
+
+        # Calculating pressure drops
+        dP_frictional_tp = calc_two_phase_frictional_pressure_drop_low_Reynolds(args=args_tp) # [Pa] Frictional pressure drop in two-phase seciton of channel
+        dP_frictional_g = calc_single_phase_frictional_pressure_drop_low_Reynolds(args=args_g) # [Pa] Frictional pressure drop for gas-phase of channel
+        # Total pressure drop (just frictional for now)
+        dP_total = dP_frictional_tp + dP_frictional_g
+        p_chamber = p_ref - dP_total # [Pa] P_ref is assumed to be inlet pressure
+
+        # Some values that may be of use, and are best calculated once correctly
+        T_chamber = p_g['T'][-1] # Last temperature in prepared gas phase values is chamber temperature (according to IRT)
+
 
     return {
         'res_l': res_l,
         'res_tp': res_tp,
         'res_g': res_g,
-        'L_total': L_total
+        'L_total': L_total,
+        'dP_total': dP_total,
+        'p_chamber': p_chamber,
+        'T_chamber': T_chamber,
     }
+
+def rectangular_multi_channel_homogenous_calculation(channel_amount, prepared_values, Nusselt_relations, pressure_drop_relations, w_channel, h_channel, m_dot, T_wall, p_ref, fp: FluidProperties):
+    """Same as full_homogenous_calculation, but with channels combined
+
+    Args:
+        channel_amount (-): Number of channels
+        prepared_values (dict): Dictionary with prepared thermodynamic variables
+        Nusselt_relations (dict): Nusselt relations for different phases
+        pressure_drop_relations (dict): Pressure drop relations for different phases and effects
+        A_channel (m^2): Area of a single channel
+        wetted_perimeter (m): Circumference of a single channel (fot heat flux purposes)
+        D_hydraulic (m): Reference for Reynolds numbers etc...
+        m_dot (kg/s): mass flow
+        T_wall (K): Wall temperature
+        p_ref (Pa): Pressure through channel
+        fp (FluidProperties): Object to access propellant properties with
+
+    Returns:
+        Results {}: Return results which are relevant for optimization
+    """
+    m_dot_channel = m_dot / channel_amount # [kg/s] Mass flow for a single channel
+    A_channel = w_channel * h_channel # [m^2] Area of a single channel
+    D_hydraulic = hydraulic_diameter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] 
+    wetted_perimeter = wetted_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] 
+
+    # Simulation of the flow resulting in desired channel length
+    res = full_homogenous_calculation(
+            prepared_values=prepared_values,
+            Nusselt_relations=Nusselt_relations,
+            pressure_drop_relations=pressure_drop_relations,
+            A_channel=A_channel,
+            wetted_perimeter=wetted_perimeter,
+            D_hydraulic=D_hydraulic,
+            m_dot=m_dot_channel,
+            T_wall=T_wall,
+            p_ref=p_ref,
+            fp=fp
+            )
+
+    return res
+
+def calc_two_phase_frictional_pressure_drop_low_Reynolds(args):
+    
+    # Müller-Steinhagen and Heck approach
+    # Pressure drop per meter if fully liquid flow (x=0)
+    A = 64/args['Re_tp_l'] * 1/(2*args['D_hydraulic']) * args['rho_tp_l'] * args['u_tp_l']**2 # [Pa/m] Pressure drop per unit length if fully liquid
+    # Pressure drop per meter if fully gaseous
+    B = 64/args['Re_tp_g'] * 1/(2*args['D_hydraulic']) * args['rho_tp_g'] * args['u_tp_g']**2 # [Pa/m] pressure drop per unit length if fully gaseous
+
+    dp_dl = ( A + 2 * (B-A) * args['x'] )*(1-args['x'])**(1/3) + B*args['x']**3 # [Pa/m] Pressure drop for two-phase flow
+    # Each section has varying lengths, so remember dL is probably not constant
+    return np.sum(dp_dl * args['delta_L_tp']) # [Pa] Two-phase frictional pressure drop
+
+def calc_single_phase_frictional_pressure_drop_low_Reynolds(args):
+    # Müller-Steinhagen and Heck approach
+    dp_dl= 64/args['Re'] * 1/(2*args['D_hydraulic']) * args['rho'] * args['u']**2 # [Pa/m] Pressure drop per unit length if fully liquid
+    return np.sum(dp_dl * args['delta_L_tp']) # [Pa] Two-phase frictional pressure drop

@@ -4,6 +4,7 @@ from physical_constants import g0
 from sys import float_info
 import math
 from scipy import optimize
+from thermo.prop import FluidProperties
 
 
 def vdk(gamma):
@@ -363,3 +364,48 @@ def get_engine_performance(p_chamber, T_chamber, A_throat, AR_exit, p_back, gamm
             'u_throat': u_throat,
             'T_exit': T_exit,
             'p_exit': p_exit}
+
+def engine_performance_from_F_and_T(F_desired, p_chamber, T_chamber, AR_exit, p_back, fp: FluidProperties):
+    """ Returns Nozzle Inlet State based on IRT
+
+    Args:
+        F_desired (N): Desired thrust
+        p_chamber (Pa): Chamber thrust/nozzle inlet pressure
+        T_chamber (K): Chamber temperature
+        AR_exit (-): A_exit / A_throat
+        p_back (Pa): Back pressure
+        fp (FluidProperties): Used to access fluid properties
+
+    Raises:
+        Exception: Raised when no solution is found for given input
+
+    Returns:
+        dict{A_throat [m^2], m_dot [kg/s]}: Throat area and mass flow
+    """
+    # Default range for temperature for root-finding algorithm
+    A_low = 1e-20 # [K]
+    A_high = 1e-4 # [K]
+
+    R = fp.get_specific_gas_constant() # [J/(kg*K)]
+    gamma = fp.get_specific_heat_ratio(T_chamber,p_chamber) # [-] Specific heat ratio
+    # If x is zero, then the desired thrust is found. Gamma is changed depending on temperature as well
+    x = lambda A_t: F_desired - get_engine_performance(p_chamber=p_chamber, T_chamber=T_chamber, A_throat=A_t, \
+                        AR_exit=AR_exit,p_back=p_back, gamma=gamma,R=R)['thrust']
+
+    root_result = optimize.root_scalar(x, bracket=[A_low,A_high], xtol=1e-12
+    )
+
+    if root_result.converged:
+        A_throat = root_result.root # [m^2]
+    else:
+        raise Exception("No solution found for given temperature")
+
+    # Now the chamber temperature is known, return the unknown parameters
+
+    ep = get_engine_performance(p_chamber=p_chamber, T_chamber=T_chamber, A_throat=A_throat, \
+                        AR_exit=AR_exit,p_back=p_back, gamma=fp.get_specific_heat_ratio(T_chamber,p_chamber),R=R)
+    # Add throat area to dictionary
+    ep['A_throat'] = A_throat # This is usually an input for get_engine_performance, but now added to make it one complete solution
+    #ep['Isp'] = IRT.effective_ISP(thrust=F_desired,m_dot=ep['m_dot']) # [s] Effective specific impulse
+
+    return ep

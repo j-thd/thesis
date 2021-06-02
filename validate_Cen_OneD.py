@@ -54,7 +54,7 @@ def calc_and_plot_thruster(td, axs_to_plot):
     T_chamber = np.linspace(start=T_sat+1, stop=T_wall-1, num=250) # [K] 
 
     # Geometric values
-    wetted_perimeter = basic.chamber.wetter_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Wetted perimeter of channel
+    wetted_perimeter = basic.chamber.wetted_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Wetted perimeter of channel
     A_channel = w_channel*h_channel # [m^2] Cross-sectional through which fluid flows
     D_hydraulic = basic.chamber.hydraulic_diameter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Hydraulic diameter
     # Preparation functions calculations many intermediate values that are known before geometry is known

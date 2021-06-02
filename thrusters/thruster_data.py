@@ -40,7 +40,8 @@ td_Silva_5 = {
     "throat_roc": 260e-6, # [m]
     "AR_exit": 8.25, # [-]
     "w_nozzle_exit": 1072.5, # [m]
-    "divergent_half_angle": math.radians(20) # [rad]
+    "divergent_half_angle": math.radians(20), # [rad]
+    "T_wall_guess": 424.6, # [K] Actual wall temperature unknown, so this is based on the laminar heat flow model
     }
 
 ## CEN2010 THRUSTERS ## STRAIGHT MULTI-CHANNEL THRUSTERS
@@ -57,6 +58,7 @@ Cen2010_1 = {
     "p_back": 0, # [Pa]
     "h_channel": 120e-6, # [m]
     "w_channel": 80e-6, # [m]
+    "w_channel_spacing": 50e-6, # [m]
     "L_channel": 6e-3, # [m]  
     "h_throat": 120e-6, # [m]
     "w_throat": 150e-6, # [m]
@@ -64,6 +66,7 @@ Cen2010_1 = {
     "w_nozzle_exit": 1758e-6, # [m]
     "L_nozzle": 3000e-6, # [m] Nozzle length
     "divergent_half_angle": math.radians(15), # [rad]
+    "convergent_half_angle": math.radians(45), # [rad]
     "T_chamber_guess": 571.90, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
     }
 
@@ -80,12 +83,14 @@ Cen2010_2 = {
     "p_back": 0, # [Pa]
     "h_channel": 120e-6, # [m]
     "w_channel": 80e-6, # [m]
+    "w_channel_spacing": 50e-6, # [m]
     "L_channel": 6e-3, # [m]  
     "h_throat": 120e-6, # [m]
     "w_throat": 150e-6, # [m]
     "AR_exit": 11.72, # [-]
     "w_nozzle_exit": 1758e-6, # [m]
     "divergent_half_angle": math.radians(15), # [rad]
+    "convergent_half_angle": math.radians(45), # [rad]
     "T_chamber_guess": 570.80, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
     }
 
@@ -102,12 +107,14 @@ Cen2010_3 = {
     "p_back": 0, # [Pa]
     "h_channel": 120e-6, # [m]
     "w_channel": 80e-6, # [m]
+    "w_channel_spacing": 50e-6, # [m]
     "L_channel": 6e-3, # [m]  
     "h_throat": 120e-6, # [m]
     "w_throat": 150e-6, # [m]
     "AR_exit": 11.72, # [-]
     "w_nozzle_exit": 1758e-6, # [m]
     "divergent_half_angle": math.radians(15), # [rad]
+    "convergent_half_angle": math.radians(45), # [rad]
     "T_chamber_guess": 568.86, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
     }
 
@@ -124,12 +131,14 @@ Cen2010_4 = {
     "p_back": 0, # [Pa]
     "h_channel": 120e-6, # [m]
     "w_channel": 80e-6, # [m]
+    "w_channel_spacing": 50e-6, # [m]
     "L_channel": 6e-3, # [m]  
     "h_throat": 120e-6, # [m]
     "w_throat": 150e-6, # [m]
     "AR_exit": 11.72, # [-]
     "w_nozzle_exit": 1758e-6, # [m]
     "divergent_half_angle": math.radians(15), # [rad]
+    "convergent_half_angle": math.radians(45), # [rad]
     "T_chamber_guess": 565.95, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
     }
 
@@ -146,12 +155,14 @@ Cen2010_5 = {
     "p_back": 0, # [Pa]
     "h_channel": 120e-6, # [m]
     "w_channel": 80e-6, # [m]
+    "w_channel_spacing": 50e-6, # [m]
     "L_channel": 6e-3, # [m]  
     "h_throat": 120e-6, # [m]
     "w_throat": 150e-6, # [m]
     "AR_exit": 11.72, # [-]
     "w_nozzle_exit": 1758e-6, # [m]
     "divergent_half_angle": math.radians(15), # [rad]
+    "convergent_half_angle": math.radians(45), # [rad]
     "T_chamber_guess": 562.22, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
     }
 
@@ -168,12 +179,15 @@ Cen2010_6 = {
     "p_back": 0, # [Pa]
     "h_channel": 120e-6, # [m]
     "w_channel": 80e-6, # [m]
+    "w_channel_spacing": 50e-6, # [m]
     "L_channel": 6e-3, # [m]  
     "h_throat": 120e-6, # [m]
     "w_throat": 150e-6, # [m]
     "AR_exit": 11.72, # [-]
     "w_nozzle_exit": 1758e-6, # [m]
     "divergent_half_angle": math.radians(15), # [rad]
+    "convergent_half_angle": math.radians(45), # [rad]
+    "l_exit_manifold": 0.0, # [m] Length after channels end, before convergent nozzle starts
     "T_chamber_guess": 557.80, # [K] Chamber temperature is not measured, this is based on laminar 1D model for validation
     }
 

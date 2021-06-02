@@ -37,7 +37,7 @@ fp = FluidProperties(td['propellant'])  # Object from which fluid properties can
 m_dot_channel = m_dot/channel_amount    # [kg/s] Mass flow through one single channel
 
 # Geometric values
-wetted_perimeter = basic.chamber.wetter_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Wetted perimeter of channel
+wetted_perimeter = basic.chamber.wetted_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Wetted perimeter of channel
 A_channel = w_channel*h_channel # [m^2] Cross-sectional through which fluid flows
 D_hydr = basic.chamber.hydraulic_diameter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Hydraulic diameter
 # Preparation functions calculations many intermediate values that are known before geometry is known

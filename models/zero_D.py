@@ -4,7 +4,7 @@ import numpy as np
 from scipy.optimize import optimize, root_scalar, minimize
 from basic.IRT_corrections import hydraulic_diameter
 
-from basic.chamber import T_wall_from_heat_flow, h_conv_from_Stanton, hydraulic_diameter_rectangular, radiation_loss, required_chip_area, required_heater_area, required_power, wetter_perimeter_rectangular, convective_heat_flow, mass_flow, velocity_from_mass_flow, ideal_enthalpy_change
+from basic.chamber import T_wall_from_heat_flow, h_conv_from_Stanton, hydraulic_diameter_rectangular, radiation_loss, required_chip_area, required_heater_area, required_power, wetted_perimeter_rectangular, convective_heat_flow, mass_flow, velocity_from_mass_flow, ideal_enthalpy_change
 from thermo.convection import Nu_DB, Nusselt_Dittus_Boelter, Stanton_from_Nusselt_and_velocity, Stanton_from_Nusselt_func_and_velocity
 from thermo.prop import FluidProperties
 import thermo.convection as conv
@@ -15,50 +15,6 @@ import basic.IRT as IRT
 def NIT_Rajeev(F_desired, p_inlet, h_throat, w_throat, throat_roc, AR_exit, p_back, divergence_half_angle, fp: FluidProperties, heating=True):
     pass
 
-def engine_performance_from_F_and_T(F_desired, p_chamber, T_chamber, AR_exit, p_back, fp: FluidProperties):
-    """ Returns Nozzle Inlet State based on IRT
-
-    Args:
-        F_desired (N): Desired thrust
-        p_chamber (Pa): Chamber thrust/nozzle inlet pressure
-        T_chamber (K): Chamber temperature
-        AR_exit (-): A_exit / A_throat
-        p_back (Pa): Back pressure
-        fp (FluidProperties): Used to access fluid properties
-
-    Raises:
-        Exception: Raised when no solution is found for given input
-
-    Returns:
-        dict{A_throat [m^2], m_dot [kg/s]}: Throat area and mass flow
-    """
-    # Default range for temperature for root-finding algorithm
-    A_low = 1e-20 # [K]
-    A_high = 1e-6 # [K]
-
-    R = fp.get_specific_gas_constant() # [J/(kg*K)]
-    gamma = fp.get_specific_heat_ratio(T_chamber,p_chamber) # [-] Specific heat ratio
-    # If x is zero, then the desired thrust is found. Gamma is changed depending on temperature as well
-    x = lambda A_t: F_desired - IRT.get_engine_performance(p_chamber=p_chamber, T_chamber=T_chamber, A_throat=A_t, \
-                        AR_exit=AR_exit,p_back=p_back, gamma=gamma,R=R)['thrust']
-
-    root_result = root_scalar(x, bracket=[A_low,A_high], xtol=1e-12
-    )
-
-    if root_result.converged:
-        A_throat = root_result.root # [m^2]
-    else:
-        raise Exception("No solution found for given temperature")
-
-    # Now the chamber temperature is known, return the unknown parameters
-
-    ep = IRT.get_engine_performance(p_chamber=p_chamber, T_chamber=T_chamber, A_throat=A_throat, \
-                        AR_exit=AR_exit,p_back=p_back, gamma=fp.get_specific_heat_ratio(T_chamber,p_chamber),R=R)
-    # Add throat area to dictionary
-    ep['A_throat'] = A_throat # This is usually an input for get_engine_performance, but now added to make it one complete solution
-    #ep['Isp'] = IRT.effective_ISP(thrust=F_desired,m_dot=ep['m_dot']) # [s] Effective specific impulse
-
-    return ep
 
 # def DB_IRT(F_desired, p_inlet, T_inlet, T_chamber, L_channel, w_channel, h_channel, w_throat, h_throat, AR_exit, p_back, fp: FluidProperties, heating=True):
 
@@ -245,7 +201,7 @@ def total_power_single_channel(T_wall, w_channel, Nu_func, T_inlet, T_chamber, T
 
     A_channel = w_channel * h_channel # [m^2] Channel area
     print("A_channel: {}".format(A_channel))
-    wetted_perimeter = wetter_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Distance of channel cross-section in contact with fluid
+    wetted_perimeter = wetted_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Distance of channel cross-section in contact with fluid
     print("wetted_perimeter: {}".format(wetted_perimeter))
     # Reference length is hydraulic diameter
     D_hydraulic = hydraulic_diameter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Hydraulic diameter
@@ -372,7 +328,7 @@ def two_phase_single_channel(T_wall, w_channel, Nu_func_gas, Nu_func_liquid, T_i
 
     # Channel geometry
     A_channel = w_channel * h_channel # [m^2] Area through which the fluid flows
-    wetted_perimeter = wetter_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Distance of channel cross-section in contact with fluid
+    wetted_perimeter = wetted_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Distance of channel cross-section in contact with fluid
     D_hydraulic = hydraulic_diameter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Hydraulic diameter
 
     # Flow similarity parameters (for debugging and Nu calculatoin purposes)

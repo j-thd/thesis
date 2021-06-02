@@ -1,4 +1,5 @@
 import unittest
+import math
 import basic.chamber as chamber
 import thermo.prop 
 from thermo.prop import FluidProperties
@@ -101,18 +102,18 @@ class TestWettedPerimeterRectangular(unittest.TestCase):
         w = 1
 
         exp = 4
-        res = chamber.wetter_perimeter_rectangular(w_channel=w, h_channel=h)
+        res = chamber.wetted_perimeter_rectangular(w_channel=w, h_channel=h)
         self.assertEqual(res,exp)
 
         h=4
 
         exp = 10
-        res = chamber.wetter_perimeter_rectangular(w_channel=w, h_channel=h)
+        res = chamber.wetted_perimeter_rectangular(w_channel=w, h_channel=h)
         self.assertEqual(res,exp)
 
         w = 2
         exp= 12
-        res = chamber.wetter_perimeter_rectangular(w_channel=w, h_channel=h)
+        res = chamber.wetted_perimeter_rectangular(w_channel=w, h_channel=h)
         self.assertEqual(res,exp)
 
 class TestHydraulicDiameterRectangular(unittest.TestCase):
@@ -312,6 +313,74 @@ class TestReynoldsFromMassFlow(unittest.TestCase):
         res = chamber.Reynolds_from_mass_flow(m_dot=m_dot,A_channel=A, L_ref=D_h,mu=mu)
         self.assertAlmostEqual(exp,res,delta=1e-13*exp)
 
+class testOutletLength(unittest.TestCase):
+    def testCenExample(self):
+        w_channel = 80e-6 # [m] Channel width
+        w_channel_spacing = 50e-6 # [m] Spacing between channels
+        w_throat = 150e-6 # [m] Throat width
+        channel_amount = 9 # [-] Amount of channels
+        convergent_half_angle = math.radians(45) # [rad]
+        divergent_half_angle = math.radians(15) # [rad]
+        AR_exit = 11.72
 
+        res_l = chamber.outlet_length(w_channel=w_channel, w_channel_spacing=w_channel_spacing, channel_amount=channel_amount, convergent_half_angle=convergent_half_angle,\
+            w_throat=w_throat, divergent_half_angle=divergent_half_angle, AR_exit=AR_exit) # [m]
+        
+        exp_l = 3484e-6 # [m] Outlet length
 
+        self.assertAlmostEqual(exp_l,res_l, delta=1e-3*exp_l)
 
+        l_exit_manifold = 1e-3 # [m] Same test but with exit manifold not 0
+        res_l = chamber.outlet_length(w_channel=w_channel, w_channel_spacing=w_channel_spacing, channel_amount=channel_amount, convergent_half_angle=convergent_half_angle,\
+            w_throat=w_throat, divergent_half_angle=divergent_half_angle, AR_exit=AR_exit, l_exit_manifold=l_exit_manifold) # [m]
+        exp_l = 4484e-6 # [m] Outlet length
+        self.assertAlmostEqual(exp_l,res_l, delta=1e-3*exp_l)
+
+class testBasicSubstrateHeatLoss(unittest.TestCase):
+    def test_simple_input(self):
+        # Simple engineered case in which required thickness is calculated for given delta T
+        kappa = 1 # [W/mK]
+        emissivity = 1 # [-]
+        T_top = 400  # [K]
+        thickness = 0.2177 # [m] Reverse-calcualted value that should result in 300 T_bottom
+        A = 1 # [m^2]
+
+        # This temperature difference should result in 459.27 W being radiated away
+
+        exp_P = 459.27 # [K]
+        res_P = chamber.basic_substrate_heat_loss(T_top=T_top, kappa=kappa, emissivity=emissivity, thickness=thickness, A_substrate=A) # Area does not matter for calculation
+        self.assertAlmostEqual(exp_P,res_P,delta=1e-3*exp_P)
+
+        # Halving kappa and epsilon should give same temperature difference but less radiation
+        kappa = 0.5 # [W/mK]
+        emissivity = 0.5 # [-]
+        T_top = 400  # [K]
+        thickness = 0.2177 # [m] Reverse-calcualted value that should result in 300 T_bottom
+        A = 1 # [m^2]
+
+        exp_P = 229.635 # [K]
+        res_P = chamber.basic_substrate_heat_loss(T_top=T_top, kappa=kappa, emissivity=emissivity, thickness=thickness, A_substrate=A) # Area does not matter for calculation
+        self.assertAlmostEqual(exp_P,res_P,delta=1e-3*exp_P)
+
+        # Halving area, doesn't change resulting temp, but halves radiation, too
+        kappa = 0.5 # [W/mK]
+        emissivity = 0.5 # [-]
+        T_top = 400  # [K]
+        thickness = 0.2177 # [m] Reverse-calcualted value that should result in 300 T_bottom
+        A = 0.5# [m^2]
+
+        exp_P = 114.8175 # [K]
+        res_P = chamber.basic_substrate_heat_loss(T_top=T_top, kappa=kappa, emissivity=emissivity, thickness=thickness, A_substrate=A) # Area does not matter for calculation
+        self.assertAlmostEqual(exp_P,res_P,delta=1e-3*exp_P)
+
+        # Another random case to check if it also works
+        kappa = 2
+        emissivity = 0.1
+        thickness = 4.514991181657849 # [m] Should result in 250K bottom temperature
+        T_top = 300 
+        A = 2.5
+
+        55.37109375
+        exp_P = 55.37109375 # [K]
+        res_P = chamber.basic_substrate_heat_loss(T_top=T_top, kappa=kappa, emissivity=emissivity, thickness=thickness, A_substrate=A) # Area does not matter for calculation
+        self.assertAlmostEqual(exp_P,res_P,delta=1e-3*exp_P)

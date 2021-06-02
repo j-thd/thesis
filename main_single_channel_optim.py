@@ -3,7 +3,7 @@
 
 '''
 
-from basic.chamber import hydraulic_diameter_rectangular, radiation_loss, wetter_perimeter_rectangular, velocity_from_mass_flow
+from basic.chamber import hydraulic_diameter_rectangular, radiation_loss, wetted_perimeter_rectangular, velocity_from_mass_flow
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -69,7 +69,7 @@ T_wall = T_chamber + T_superheat # [K] Wall temperature
 A_channel = w_channel * h_channel # [m^2] Channel area
 mass_flux = m_dot / A_channel # [kg/m^2] Used as reference for validity of many relations in micro-channel studies
 print("A_channel: {}".format(A_channel))
-wetted_perimeter = wetter_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Distance of channel cross-section in contact with fluid
+wetted_perimeter = wetted_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Distance of channel cross-section in contact with fluid
 print("wetted_perimeter: {}".format(wetted_perimeter))
 # Reference length is hydraulic diameter
 D_hydraulic = hydraulic_diameter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] Hydraulic diameter
