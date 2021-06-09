@@ -387,38 +387,64 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
 
     # Calculate the total length of all sections, which is the sum of the last elements in each length array
     L_total = res_l['L'][-1] + res_tp['L'][-1] + res_g['L'][-1] # [m]
-    # If necessary, calculate the pressure drop
+    # If necessary, calculate the pressure drop. If just ONE pressure drop relation is given, it stops being None.
     dP_total = None # [Pa] The pressure drop is returned as None if none is caluclated
     p_chamber = None # [Pa] The chamber pressure is returned as None if no pressure drop is calculated. It is purposefully not set to p_ref or p_inlet, as the user must be aware of which value he uses
+    
+    dP_l = None # [Pa] Pressure drop in liquid section of channel
+    dP_tp = None # [Pa] Pressure drop in two-phase section of channel
+    dP_g = None # [Pa] Pressure drop in gas section of channel
     if (pressure_drop_relations is not None):
-        
-        ## Two-phase-arguments
-        args_tp = {
-            'x': p_tp['x'], # [-] Array of vapour quality
-            'Re_tp_l' : res_tp['Re'][0], # [-] Reynolds number for x=0
-            'Re_tp_g' : res_tp['Re'][-1],   # [-] Similary, x=1
-            'rho_tp_l': p_tp['rho'][0], # [kg/m^3] Liquid density when x=0
-            'rho_tp_g': p_tp['rho'][-1], # [kg/m^3] Gas density when x=1
-            'u_tp_l': res_tp['u'][0], # [m/s] Liquid Velocity for x=0
-            'u_tp_g': res_tp['u'][-1], # [m/s] Gas Velocity for x=1
-            'D_hydraulic': D_hydraulic, # [m] Hydraulic diameter
-            'delta_L_tp': res_tp['delta_L'], # Size of meshes
-        }
-        
-        # Gas arguments
-        args_g = {
-            'Re' : res_g['Re'], # [-] Reynolds number for x=0
-            'rho': p_g['rho'], # [kg/m^3] Density
-            'u': res_g['u'], # [m/s] Velocity
-            'D_hydraulic': D_hydraulic, # [m] Hydraulic diameter
-            'delta_L_tp': res_g['delta_L'], # Size of meshes
-        }
+        # Check if liquid relation is given
+        if 'l' in pressure_drop_relations: # Calculate pressure drop if given
+            args_l = {
+                'Re' : res_l['Re'], # [-] Reynolds number for x=0
+                'rho': p_l['rho'], # [kg/m^3] Density
+                'u': res_l['u'], # [m/s] Velocity
+                'D_hydraulic': D_hydraulic, # [m] Hydraulic diameter
+                'delta_L': res_g['delta_L'], # Size of meshes
+            }
+            dP_l = pressure_drop_relations['l'](args=args_l) # [Pa] Pressure drop in liquid section of channel
+        else: # No relation given, means it is assumed to be neglected
+            dP_l = 0 # [Pa]
 
-        # Calculating pressure drops
-        dP_frictional_tp = calc_two_phase_frictional_pressure_drop_low_Reynolds(args=args_tp) # [Pa] Frictional pressure drop in two-phase seciton of channel
-        dP_frictional_g = calc_single_phase_frictional_pressure_drop_low_Reynolds(args=args_g) # [Pa] Frictional pressure drop for gas-phase of channel
-        # Total pressure drop (just frictional for now)
-        dP_total = dP_frictional_tp + dP_frictional_g
+        # Check if two-phase relation is given
+        if 'tp' in pressure_drop_relations:
+        ## Two-phase-arguments
+            args_tp = {
+                'x': p_tp['x'], # [-] Array of vapour quality
+                'Re_tp_l' : res_tp['Re'][0], # [-] Reynolds number for x=0
+                'Re_tp_g' : res_tp['Re'][-1],   # [-] Similary, x=1
+                'rho_tp_l': p_tp['rho'][0], # [kg/m^3] Liquid density when x=0
+                'rho_tp_g': p_tp['rho'][-1], # [kg/m^3] Gas density when x=1
+                'u_tp_l': res_tp['u'][0], # [m/s] Liquid Velocity for x=0
+                'u_tp_g': res_tp['u'][-1], # [m/s] Gas Velocity for x=1
+                'D_hydraulic': D_hydraulic, # [m] Hydraulic diameter
+                'delta_L': res_tp['delta_L'], # Size of meshes
+            }           
+            dP_tp = pressure_drop_relations['tp'](args=args_tp) # [Pa] Pressure drop in two-phase seciton of channel
+        else: # No relation given, means it is assumed to be neglected
+            dP_tp = 0 # [Pa] Pressure drop in two-phase seciton of channel
+
+        # Check if gas-relation is given
+
+        if 'g' in pressure_drop_relations:
+            # Gas arguments
+            args_g = {
+                'Re' : res_g['Re'], # [-] Reynolds number for x=0
+                'rho': p_g['rho'], # [kg/m^3] Density
+                'u': res_g['u'], # [m/s] Velocity
+                'D_hydraulic': D_hydraulic, # [m] Hydraulic diameter
+                'delta_L': res_g['delta_L'], # Size of meshes
+            }
+            # Calculate pressure drop in gas section 
+            dP_g = pressure_drop_relations['g'](args=args_g)  # [Pa] Pressure drop in gas section of channel
+        else:
+            dP_g = 0 # [Pa] Pressure drop in gas section of channel
+
+
+        # Summing up the results of calculated pressure drops in three sections of channel
+        dP_total = dP_l + dP_tp + dP_g # [Pa] Total pressure drop of whatever source
         p_chamber = p_ref - dP_total # [Pa] P_ref is assumed to be inlet pressure
 
         # Some values that may be of use, and are best calculated once correctly
@@ -430,6 +456,9 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
         'res_tp': res_tp,
         'res_g': res_g,
         'L_total': L_total,
+        'dP_l': dP_l,
+        'dP_tp': dP_tp,
+        'dP_g': dP_g,
         'dP_total': dP_total,
         'p_chamber': p_chamber,
         'T_chamber': T_chamber,
@@ -485,9 +514,9 @@ def calc_two_phase_frictional_pressure_drop_low_Reynolds(args):
 
     dp_dl = ( A + 2 * (B-A) * args['x'] )*(1-args['x'])**(1/3) + B*args['x']**3 # [Pa/m] Pressure drop for two-phase flow
     # Each section has varying lengths, so remember dL is probably not constant
-    return np.sum(dp_dl * args['delta_L_tp']) # [Pa] Two-phase frictional pressure drop
+    return np.sum(dp_dl * args['delta_L']) # [Pa] Two-phase frictional pressure drop
 
 def calc_single_phase_frictional_pressure_drop_low_Reynolds(args):
     # Müller-Steinhagen and Heck approach
     dp_dl= 64/args['Re'] * 1/(2*args['D_hydraulic']) * args['rho'] * args['u']**2 # [Pa/m] Pressure drop per unit length if fully liquid
-    return np.sum(dp_dl * args['delta_L_tp']) # [Pa] Two-phase frictional pressure drop
+    return np.sum(dp_dl * args['delta_L']) # [Pa] Two-phase frictional pressure drop
