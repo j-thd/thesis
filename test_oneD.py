@@ -473,13 +473,13 @@ class TestRectangularMultiChannelHomogenousCalculation(unittest.TestCase):
         exp_dP_g = 9.143E+07 # [Pa] 
         res_dP_g = self.res['dP_g'] # [Pa]
         # Yes, it is negative, but shouldn't matter, as long as calculation does what it is supposed to
-        exp_p_chamber = 2e5- res_dP_tp - res_dP_l - res_dP_g #-1.8893E+07 # [Pa]
+        exp_p_chamber = -1.103781593E+08 # 2e5- res_dP_tp - res_dP_l - res_dP_g #-1.8893E+07 # [Pa]
         res_p_chamber = self.res['p_chamber'] # [Pa]
 
         self.assertAlmostEqual(exp_dP_l, res_dP_l, delta=exp_dP_l*1.5e-3)
         self.assertAlmostEqual(exp_dP_tp, res_dP_tp, delta=exp_dP_tp*1.5e-2)
         self.assertAlmostEqual(exp_dP_g, res_dP_g, delta=exp_dP_g*1.5e-2)
-        self.assertAlmostEqual(exp_p_chamber, res_p_chamber, delta=exp_p_chamber*1e-9)
+        self.assertAlmostEqual(exp_p_chamber, res_p_chamber, delta=-exp_p_chamber*6e-3)
 
     def testLength(self):
         # Results based on manual calculation in excelsheet Verification_one_d.xlsx
