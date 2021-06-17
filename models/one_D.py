@@ -387,6 +387,10 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
 
     # Calculate the total length of all sections, which is the sum of the last elements in each length array
     L_total = res_l['L'][-1] + res_tp['L'][-1] + res_g['L'][-1] # [m]
+    print("\n -- Lengths -- :")
+    print("Liquid: {:4.3f} mm".format(res_l['L'][-1]*1e3))
+    print("Two-phase: {:4.3f} mm".format(res_tp['L'][-1]*1e3))
+    print("Gas: {:4.3f} mm".format(res_g['L'][-1]*1e3))
     # If necessary, calculate the pressure drop. If just ONE pressure drop relation is given, it stops being None.
     dP_total = None # [Pa] The pressure drop is returned as None if none is caluclated
     p_chamber = None # [Pa] The chamber pressure is returned as None if no pressure drop is calculated. It is purposefully not set to p_ref or p_inlet, as the user must be aware of which value he uses
@@ -402,7 +406,7 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
                 'rho': p_l['rho'], # [kg/m^3] Density
                 'u': res_l['u'], # [m/s] Velocity
                 'D_hydraulic': D_hydraulic, # [m] Hydraulic diameter
-                'delta_L': res_g['delta_L'], # Size of meshes
+                'delta_L': res_l['delta_L'], # Size of meshes
             }
             dP_l = pressure_drop_relations['l'](args=args_l) # [Pa] Pressure drop in liquid section of channel
         else: # No relation given, means it is assumed to be neglected
@@ -452,6 +456,9 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
 
 
     return {
+        'p_g': p_g,
+        'p_tp': p_tp,
+        'p_l': p_l,
         'res_l': res_l,
         'res_tp': res_tp,
         'res_g': res_g,
@@ -517,6 +524,11 @@ def calc_two_phase_frictional_pressure_drop_low_Reynolds(args):
     return np.sum(dp_dl * args['delta_L']) # [Pa] Two-phase frictional pressure drop
 
 def calc_single_phase_frictional_pressure_drop_low_Reynolds(args):
-    # Müller-Steinhagen and Heck approach
+    # Müller-Steinhagen and Heck approach for Reynolds below Re << 1187
     dp_dl= 64/args['Re'] * 1/(2*args['D_hydraulic']) * args['rho'] * args['u']**2 # [Pa/m] Pressure drop per unit length if fully liquid
+    return np.sum(dp_dl * args['delta_L']) # [Pa] Two-phase frictional pressure drop
+
+def calc_single_phase_frictional_pressure_drop_high_Reynolds(args):
+    # Müller-Steinhagen and Heck approach for Reynolds above Re > 1187
+    dp_dl= 0.3164/args['Re']**(1/4) * 1/(2*args['D_hydraulic']) * args['rho'] * args['u']**2 # [Pa/m] Pressure drop per unit length if fully liquid
     return np.sum(dp_dl * args['delta_L']) # [Pa] Two-phase frictional pressure drop

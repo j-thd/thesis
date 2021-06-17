@@ -405,3 +405,146 @@ class TestCalcHomogeneousTransition(unittest.TestCase):
         self.assertAlmostEqual(exp_L1, self.res['L'][1], delta=1e-3*exp_L1)
         self.assertAlmostEqual(exp_L2, self.res['L'][2], delta=2e-2*exp_L2)
         # So, 2 percent difference in length calculations
+
+class TestRectangularMultiChannelHomogenousCalculation(unittest.TestCase):
+    def setUp(self):
+        # Results based on manual calculation in excelsheet Verification_one_d.xlsx
+        fp = FluidProperties('water')
+        p_inlet = 2e5  # [Pa] Inlet pressure
+        steps = 3 # [-] Number of data point
+        m_dot = 0.1e-3 # [kg/s]
+        T_wall = 500 # [K]
+        T_inlet = 300 # [K]
+        T_outlet = 450
+        channel_amount = 1 
+
+        
+        # Nusselt functions
+        Nusselt_relations = {
+            'Nu_func_gas': thermo.convection.Nu_DB, # [-] Function to calculate Nusselt number (gas phase)
+            'Nu_func_liquid': thermo.convection.Nu_DB ,  # [-] Function to caculate Nusselt number (liquid phase)
+            'Nu_func_two_phase': tp.Nu_Kandlikar_NBD_dryout, # [-] Function to calculate Nusselt number (two-phase)
+            'Nu_func_le': thermo.convection.Nu_DB, # [-] Function to calculate Nusselt in two-phase, AS IF the flow was entirely liquid (two-phase, le)
+            'Nu_func_dryout': tp.Nu_DB_two_phase, #thermo.two_phase.Nu_DB_two_phase # [-] Function to calculate the Nusselt number after dry-out. It is up to Nu_func_two_phase to decide if/how to apply it'
+        }
+        
+        # Pressure drop functions. Testing 3 seperate functions to check integraotin, modularity, as well as separate functions
+        pressure_drop_relations = {
+            'l': oneD.calc_single_phase_frictional_pressure_drop_low_Reynolds,
+            'tp': oneD.calc_two_phase_frictional_pressure_drop_low_Reynolds,
+            'g': oneD.calc_single_phase_frictional_pressure_drop_high_Reynolds,
+        }
+       
+
+        #Geometry
+        w_channel = 100e-6 # [m] Width and height
+        h_channel = 100e-6 # [m] Channel height
+        steps = 3 
+
+        self.prepared_values = oneD.full_homogenous_preparation(\
+            T_inlet=T_inlet,
+            T_outlet=T_outlet,
+            m_dot=m_dot,
+            p_ref=p_inlet,
+            steps_l=steps,
+            steps_tp=steps,
+            steps_g=steps,
+            fp=fp)
+
+        self.res = oneD.rectangular_multi_channel_homogenous_calculation(\
+            channel_amount=channel_amount,
+            prepared_values=self.prepared_values,
+            Nusselt_relations=Nusselt_relations,
+            pressure_drop_relations=pressure_drop_relations,
+            w_channel=w_channel,
+            h_channel=h_channel,
+            m_dot=m_dot,
+            T_wall=T_wall,
+            p_ref=p_inlet,
+            fp=fp)
+        return super().setUp()
+
+    def testPressureDrop(self):
+        # Results based on manual calculation in excelsheet Verification_one_d.xlsx
+        exp_dP_tp = 1.9093e7 # [Pa] 
+        res_dP_tp = self.res['dP_tp'] # [Pa]
+        exp_dP_l = 5.884E+04 # [Pa]
+        res_dP_l = self.res['dP_l']
+        exp_dP_g = 9.143E+07 # [Pa] 
+        res_dP_g = self.res['dP_g'] # [Pa]
+        # Yes, it is negative, but shouldn't matter, as long as calculation does what it is supposed to
+        exp_p_chamber = 2e5- res_dP_tp - res_dP_l - res_dP_g #-1.8893E+07 # [Pa]
+        res_p_chamber = self.res['p_chamber'] # [Pa]
+
+        self.assertAlmostEqual(exp_dP_l, res_dP_l, delta=exp_dP_l*1.5e-3)
+        self.assertAlmostEqual(exp_dP_tp, res_dP_tp, delta=exp_dP_tp*1.5e-2)
+        self.assertAlmostEqual(exp_dP_g, res_dP_g, delta=exp_dP_g*1.5e-2)
+        self.assertAlmostEqual(exp_p_chamber, res_p_chamber, delta=exp_p_chamber*1e-9)
+
+    def testLength(self):
+        # Results based on manual calculation in excelsheet Verification_one_d.xlsx
+        exp_L_total = 0.067157307 # [m]
+        res_L_total = self.res['L_total'] # [m]
+        # Check total two-phased-based length # [m]
+        res_L_tp_total = self.res['res_tp']['L'][-1] # [m]
+        exp_L_tp_total = 0.051970928 # [m]
+        # Also check total gas-based length
+        res_L_g_total = self.res['res_g']['L'][-1] # [m]
+        exp_L_g_total = 0.009345518 # [m]
+
+        
+        self.assertAlmostEqual(exp_L_total,res_L_total,delta=exp_L_total*1.5e-2)
+        self.assertAlmostEqual(exp_L_tp_total,res_L_tp_total,delta=exp_L_tp_total*1.75e-2)
+        self.assertAlmostEqual(exp_L_g_total,res_L_g_total,delta=exp_L_g_total*5e-3)
+
+    def testGasDensity(self):
+        exp_rho_0 = 1.1291 # [kg/m^3]
+        exp_rho_1 = 1.0458 # [kg/m^3]
+        exp_rho_2 = 0.97558 # [kg/m^3]
+
+        self.assertAlmostEqual(exp_rho_0, self.res['p_g']['rho'][0], delta=exp_rho_0*1e-4)
+        self.assertAlmostEqual(exp_rho_1, self.res['p_g']['rho'][1], delta=exp_rho_1*1e-4)
+        self.assertAlmostEqual(exp_rho_2, self.res['p_g']['rho'][2], delta=exp_rho_2*1e-4)
+
+    def testEnthalpy(self):
+        exp_h_0 = 2706200 # [J/kg]
+        exp_h_1 = 2766100 # [J/kg]
+        exp_h_2 = 2824000 # [J/kg]
+
+        self.assertAlmostEqual(exp_h_0, self.res['p_g']['h'][0], delta=exp_h_0*1e-4)
+        self.assertAlmostEqual(exp_h_1, self.res['p_g']['h'][1], delta=exp_h_1*1e-4)
+        self.assertAlmostEqual(exp_h_2, self.res['p_g']['h'][2], delta=exp_h_2*1e-4)
+
+    def testQDot(self):
+        # Test if total power consumption and partial consumption is correct
+        exp_Q_dot_total = 11.78 # [W] Total power need in gas section\
+        res_Q_dot_total = np.sum(self.res['p_g']['Q_dot'])
+
+        self.assertAlmostEqual(exp_Q_dot_total, res_Q_dot_total, delta=exp_Q_dot_total*1e-3)
+
+    def testKappa(self):
+        exp_kappa_0 = 0.027493 # [W/(m*K)] 
+        exp_kappa_1 = 0.029434 # [W/(m*K)]
+        exp_kappa_2 = 0.031677 # [W/(m*K)]
+
+        self.assertAlmostEqual(exp_kappa_0, self.res['p_g']['kappa'][0], delta=exp_kappa_0*3e-2)
+        self.assertAlmostEqual(exp_kappa_1, self.res['p_g']['kappa'][1], delta=exp_kappa_1*3e-2)
+        self.assertAlmostEqual(exp_kappa_2, self.res['p_g']['kappa'][2], delta=exp_kappa_2*3e-2)
+
+    def testViscosity(self):
+        exp_mu_0 = 1.2963E-05 # [Pa*s] 
+        exp_mu_1 = 1.4074E-05 # [Pa*s]
+        exp_mu_2 = 1.5207E-05 # [Pa*s]
+
+        self.assertAlmostEqual(exp_mu_0, self.res['p_g']['mu'][0], delta=exp_mu_0*5e-3)
+        self.assertAlmostEqual(exp_mu_1, self.res['p_g']['mu'][1], delta=exp_mu_1*5e-3)
+        self.assertAlmostEqual(exp_mu_2, self.res['p_g']['mu'][2], delta=exp_mu_2*5e-3)
+
+    def testPrandtl(self):
+        exp_Pr_0 = 1.0270 # [Pa*s] 
+        exp_Pr_1 = 9.8916E-01 # [Pa*s]
+        exp_Pr_2 = 9.7338E-01 # [Pa*s]
+
+        self.assertAlmostEqual(exp_Pr_0, self.res['p_g']['Pr'][0], delta=exp_Pr_0*3e-2)
+        self.assertAlmostEqual(exp_Pr_1, self.res['p_g']['Pr'][1], delta=exp_Pr_1*3e-2)
+        self.assertAlmostEqual(exp_Pr_2, self.res['p_g']['Pr'][2], delta=exp_Pr_2*3e-2)

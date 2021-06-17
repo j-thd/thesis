@@ -380,7 +380,6 @@ class testBasicSubstrateHeatLoss(unittest.TestCase):
         T_top = 300 
         A = 2.5
 
-        55.37109375
         exp_P = 55.37109375 # [K]
         res_P = chamber.basic_substrate_heat_loss(T_top=T_top, kappa=kappa, emissivity=emissivity, thickness=thickness, A_substrate=A) # Area does not matter for calculation
         self.assertAlmostEqual(exp_P,res_P,delta=1e-3*exp_P)
