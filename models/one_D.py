@@ -1,7 +1,7 @@
 ## File to contain the 1D- model calculations. Heat flux relations, etc... come from elsewhere
 
 from thermo.prop import FluidProperties
-from basic.chamber import velocity_from_mass_flow, Reynolds_from_mass_flow, required_power, required_heater_area, Froude_number, delta_enthalpy_per_section,\
+from basic.chamber import inlet_manifold_width, velocity_from_mass_flow, Reynolds_from_mass_flow, required_power, required_heater_area, Froude_number, delta_enthalpy_per_section,\
     wetted_perimeter_rectangular, hydraulic_diameter_rectangular
 from thermo.convection import heat_transfer_coefficient_from_Nu
 import thermo.two_phase as tp
@@ -135,13 +135,13 @@ def prepare_homogenous_transition(p, m_dot, steps, fp: FluidProperties):
     # Thermal conductivity at saturation
     kappa_l = fp.get_liquid_saturation_conductivity(p_sat=p) # [W/(m*K)]
     kappa_g = fp.get_gas_saturation_conductivity(p_sat=p) # [W/(m*K)]
-    #Mean conductivity
+    # Mean conductivity
     kappa = tp.mean_conductivity(kappa_g=kappa_g, kappa_l=kappa_l, rho_l=rho_l, rho_g=rho_g, x=x) # [W/(m^2*K)]
     # Prandtl numbers at saturation,
     Pr_l = fp.get_saturation_Prandtl_liquid(p_sat=p) # [-]
     Pr_g = fp.get_saturation_Prandtl_gas(p_sat=p) # [-]
     # Mean Prandtl
-    Pr = tp.mean_Prandtl(Pr_g=Pr_g, Pr_l=Pr_l, rho_l=rho_l, rho_g=rho_g, x=x) # [-[]]
+    Pr = tp.mean_Prandtl(Pr_g=Pr_g, Pr_l=Pr_l, rho_l=rho_l, rho_g=rho_g, x=x) # [-]
 
 
 
@@ -319,7 +319,7 @@ def full_homogenous_preparation(T_inlet, T_outlet, m_dot, p_ref, steps_l, steps_
         'p_g': p_g
         }
 
-def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, wetted_perimeter, D_hydraulic, m_dot, T_wall, p_ref, fp: FluidProperties, pressure_drop_relations=None):
+def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, wetted_perimeter, D_hydraulic, m_dot, T_wall, p_ref, fp: FluidProperties, pressure_drop_relations=None, area_ratio_contraction=None):
     # Unpack prepared values
     p_l = prepared_values['p_l']
     p_tp = prepared_values['p_tp']
@@ -395,10 +395,24 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
     dP_total = None # [Pa] The pressure drop is returned as None if none is caluclated
     p_chamber = None # [Pa] The chamber pressure is returned as None if no pressure drop is calculated. It is purposefully not set to p_ref or p_inlet, as the user must be aware of which value he uses
     
+    # NOTE: Contraction losses are calculated before the channels are determined, as it has quite an impact on heat transfer/channel length
+    dP_contraction = None # [Pa] Pressure drop due to sudden contraction at start of channel
     dP_l = None # [Pa] Pressure drop in liquid section of channel
     dP_tp = None # [Pa] Pressure drop in two-phase section of channel
     dP_g = None # [Pa] Pressure drop in gas section of channel
     if (pressure_drop_relations is not None):
+        # Check if contraction relation is given
+        if 'contraction' in pressure_drop_relations:
+            total_dynamic_pressure = 0.5*p_l['rho'][0]*res_l['u'][0]**2 # [Pa] Total dynamic pressure
+            args_contraction= {
+                'area_ratio_contraction': area_ratio_contraction,
+                'Re_Dh_downstream': res_l['Re'][0], # [-] The downstream Reynold's number is simply the first element in the liquid phase Reynold's array
+                'total_dynamic_pressure': total_dynamic_pressure , 
+            }
+            dP_contraction = pressure_drop_relations['contraction'](args=args_contraction) # [Pa] Pressure drop due to sudden contraction
+        else:
+            dP_contraction = 0 # [Pa] Pressure drop due to sudden contraction
+        
         # Check if liquid relation is given
         if 'l' in pressure_drop_relations: # Calculate pressure drop if given
             args_l = {
@@ -448,7 +462,8 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
 
 
         # Summing up the results of calculated pressure drops in three sections of channel
-        dP_total = dP_l + dP_tp + dP_g # [Pa] Total pressure drop of whatever source
+        # IMPORTANT: Contraction loss is NOT added included in this total. It is already subtracted from p_chamber
+        dP_total = dP_l + dP_tp + dP_g + dP_contraction # [Pa] Total pressure drop of whatever source
         p_chamber = p_ref - dP_total # [Pa] P_ref is assumed to be inlet pressure
 
         # Some values that may be of use, and are best calculated once correctly
@@ -466,12 +481,13 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
         'dP_l': dP_l,
         'dP_tp': dP_tp,
         'dP_g': dP_g,
+        'dP_contraction': dP_contraction,
         'dP_total': dP_total,
         'p_chamber': p_chamber,
         'T_chamber': T_chamber,
     }
 
-def rectangular_multi_channel_homogenous_calculation(channel_amount, prepared_values, Nusselt_relations, pressure_drop_relations, w_channel, h_channel, m_dot, T_wall, p_ref, fp: FluidProperties):
+def rectangular_multi_channel_homogenous_calculation(channel_amount, prepared_values, Nusselt_relations, pressure_drop_relations, w_channel, h_channel, m_dot, T_wall, p_inlet, fp: FluidProperties, area_ratio_contraction=None):
     """Same as full_homogenous_calculation, but with channels combined
 
     Args:
@@ -495,6 +511,16 @@ def rectangular_multi_channel_homogenous_calculation(channel_amount, prepared_va
     D_hydraulic = hydraulic_diameter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] 
     wetted_perimeter = wetted_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] 
 
+    # dP_contraction = None # [Pa] Contraction pressure drop is set to None by default, so it raises obvious errors if one attemps to use it without calculating it before (0 would hide errors)
+    # # Contraction losses must be calculated here, as this pressure drop does significantly affect heat transfer
+    # if pressure_drop_relations is not None:
+    #     if 'contraction'  in pressure_drop_relations:
+    #         area_ratio_contraction = w_channel*channel_amount / w_inlet_manifold # [-]
+    #         dP_contraction = calc_contraction_loss(dP_func=pressure_drop_relations['contraction'])
+            
+
+    
+
     # Simulation of the flow resulting in desired channel length
     res = full_homogenous_calculation(
             prepared_values=prepared_values,
@@ -505,7 +531,79 @@ def rectangular_multi_channel_homogenous_calculation(channel_amount, prepared_va
             D_hydraulic=D_hydraulic,
             m_dot=m_dot_channel,
             T_wall=T_wall,
-            p_ref=p_ref,
+            p_ref=p_inlet,
+            fp=fp,
+            area_ratio_contraction=area_ratio_contraction
+            )
+
+    return res
+
+def new_rectangular_multi_channel_homogenous_calculation(channel_amount, Nusselt_relations, pressure_drop_relations, w_channel, h_channel, m_dot, T_wall, p_inlet, T_inlet, T_outlet, steps, fp: FluidProperties, w_inlet_manifold=None):
+    """Same as full_homogenous_calculation, but with channels combined
+
+    Args:
+        channel_amount (-): Number of channels
+        prepared_values (dict): Dictionary with prepared thermodynamic variables
+        Nusselt_relations (dict): Nusselt relations for different phases
+        pressure_drop_relations (dict): Pressure drop relations for different phases and effects
+        A_channel (m^2): Area of a single channel
+        wetted_perimeter (m): Circumference of a single channel (fot heat flux purposes)
+        D_hydraulic (m): Reference for Reynolds numbers etc...
+        m_dot (kg/s): mass flow
+        T_wall (K): Wall temperature
+        p_ref (Pa): Pressure through channel
+        fp (FluidProperties): Object to access propellant properties with
+
+    Returns:
+        Results {}: Return results which are relevant for optimization
+    """
+    m_dot_channel = m_dot / channel_amount # [kg/s] Mass flow for a single channel
+    A_channel = w_channel * h_channel # [m^2] Area of a single channel
+    D_hydraulic = hydraulic_diameter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] 
+    wetted_perimeter = wetted_perimeter_rectangular(w_channel=w_channel, h_channel=h_channel) # [m] 
+
+    dP_contraction = None # [Pa] Contraction pressure drop is set to None by default, so it raises obvious errors if one attemps to use it without calculating it before (0 would hide errors)
+    # Contraction losses must be calculated here, as this pressure drop does significantly affect heat transfer
+    if pressure_drop_relations is not None:
+        if 'contraction'  in pressure_drop_relations:
+            area_ratio_contraction = w_channel*channel_amount / w_inlet_manifold # [-]
+            dP_contraction = calc_contraction_loss(\
+                dP_func=pressure_drop_relations['contraction'],
+                m_dot_channel=m_dot_channel,
+                A_channel=A_channel,
+                D_hydraulic=D_hydraulic,
+                p_inlet=p_inlet,
+                T_inlet=T_inlet,
+                area_ratio_contraction=area_ratio_contraction,
+                fp=fp)
+
+    # The reference temperature in the channel becomes the inlet temperature minus contraction pressure drop
+    p_ref = p_inlet - dP_contraction # [Pa] Pressure after contraction, right at start of channel
+    prepared_values = full_homogenous_preparation(\
+        T_inlet=T_inlet,
+        T_outlet=T_outlet,
+        m_dot=m_dot_channel,
+        p_ref=p_ref,
+        steps_l=steps['l'],
+        steps_tp=steps['tp'],
+        steps_g=steps['g'],
+        fp=fp)
+    
+            
+
+    
+
+    # Simulation of the flow resulting in desired channel length
+    res = full_homogenous_calculation(
+            prepared_values=prepared_values,
+            Nusselt_relations=Nusselt_relations,
+            pressure_drop_relations=pressure_drop_relations,
+            A_channel=A_channel,
+            wetted_perimeter=wetted_perimeter,
+            D_hydraulic=D_hydraulic,
+            m_dot=m_dot_channel,
+            T_wall=T_wall,
+            p_ref=p_inlet,
             fp=fp
             )
 
@@ -532,3 +630,30 @@ def calc_single_phase_frictional_pressure_drop_high_Reynolds(args):
     # Müller-Steinhagen and Heck approach for Reynolds above Re > 1187
     dp_dl= 0.3164/args['Re']**(1/4) * 1/(2*args['D_hydraulic']) * args['rho'] * args['u']**2 # [Pa/m] Pressure drop per unit length if fully liquid
     return np.sum(dp_dl * args['delta_L']) # [Pa] Two-phase frictional pressure drop
+
+def calc_single_phase_contraction_pressure_drop_Kawahara2015(args):
+    # Kawahara2015 contraction pressure drop for Reynold be Re < 2200
+
+    B = 0.0645 * np.log(args['Re_Dh_downstream']) - 0.00792
+    C_C = B + ( 1 - B)*args['area_ratio_contraction']**(4.519)
+    zeta_C = (1-1/C_C)**2
+    
+    return zeta_C * args['total_dynamic_pressure']
+
+def calc_contraction_loss(dP_func, m_dot_channel, A_channel, D_hydraulic, p_inlet, T_inlet, area_ratio_contraction, fp:FluidProperties):
+    mass_flux = m_dot_channel/A_channel # [kg/(m^2*s)] Mass flux in single channel (same as all channels combined)
+    rho_inlet = fp.get_density(T=T_inlet,p=p_inlet) # [kg/m^3] Density in inlet manifold (assumed to be roughly equal to downstream density after pressure drop)
+    total_dynamic_pressure = 0.5 * mass_flux**2 / rho_inlet # [Pa] Total dynamic pressure (0.5*rho*u^2)
+    Re_downstream = fp.get_Reynolds_from_mass_flow(T=T_inlet, p=p_inlet, L_ref=D_hydraulic, m_dot=m_dot_channel, A=A_channel) # [-] Downstream Reynold's number in smaller channel
+
+
+    # Check if contraction relation is given
+    
+    args_contraction= {
+        'area_ratio_contraction': area_ratio_contraction,
+        'Re_Dh_downstream': Re_downstream, # [-] The downstream Reynold's number is simply the first element in the liquid phase Reynold's array
+        'total_dynamic_pressure': total_dynamic_pressure, 
+    }
+    dP_contraction = dP_func(args=args_contraction) # [Pa] Pressure drop due to sudden contraction
+
+    return dP_contraction # [Pa]

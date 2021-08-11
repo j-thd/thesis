@@ -460,7 +460,7 @@ class TestRectangularMultiChannelHomogenousCalculation(unittest.TestCase):
             h_channel=h_channel,
             m_dot=m_dot,
             T_wall=T_wall,
-            p_ref=p_inlet,
+            p_inlet=p_inlet,
             fp=fp)
         return super().setUp()
 

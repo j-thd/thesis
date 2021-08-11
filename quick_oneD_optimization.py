@@ -50,7 +50,7 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
 
     else:
         F_desired = 10e-3 # [N] Desired thrust
-        p_inlet = 5e5 # [Pa] Inlet pressure
+        p_inlet = 5.0e5 # [Pa] Inlet pressure
         T_inlet = 300 # [K] Inlet temperature
         T_chamber = 500 # [K] Chamber temperature
         p_back = 0 # [Pa] Back pressure
@@ -74,14 +74,15 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
         
         
         # Remaining paramters
-        l_inlet_manifold = 1e-3 # [m] Length before channel separates into multiple channels
-        l_exit_manifold = 1e-3 # [m] Length between the end of multiple channels and start of convergent nozzle
+        inlet_manifold_length_factor = 2 # [m] Multiplication factor with inlet manifold width to determine manifold length
+        inlet_manifold_width_factor = 5.5 # [-] Multiplication factor (with channel width to determine margin in chamber)
+        l_exit_manifold = 0 # [m] Length between the end of multiple channels and start of convergent nozzle
         convergent_half_angle  = math.radians(45) # [rad] Half-angle of the convergent part of the nozzle
         divergent_half_angle = math.radians(22.5) # [rad] Half-angle of divergent part of the nozzle
         w_channel_spacing = 50e-6 # [m] Spacing between channels (wall-to-wall)
         w_outer_margin = 2e-3 # [m] Margin around the outer channels for structural integrity
         channel_amount = 8 # [-] Number of channels
-        emissivity_chip_top = 1 # [-] Assumed emissivity of chip at top-side
+        emissivity_chip_top = 0.5 # [-] Assumed emissivity of chip at top-side
 
     # Desired geometric values
     
@@ -101,6 +102,7 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
         'l': oneD.calc_single_phase_frictional_pressure_drop_low_Reynolds,
         'tp': oneD.calc_two_phase_frictional_pressure_drop_low_Reynolds,
         'g': oneD.calc_single_phase_frictional_pressure_drop_low_Reynolds,
+        'contraction': oneD.calc_single_phase_contraction_pressure_drop_Kawahara2015
     }
 
     # Fidelity of simulation
@@ -126,7 +128,8 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
         channel_amount=channel_amount,
         w_channel=w_channel,
         h_channel=h_channel,
-        l_inlet_manifold=l_inlet_manifold,
+        inlet_manifold_length_factor=inlet_manifold_length_factor,
+        inlet_manifold_width_factor=inlet_manifold_width_factor,
         l_exit_manifold=l_exit_manifold,
         w_channel_spacing=w_channel_spacing,
         w_outer_margin=w_outer_margin,
@@ -157,6 +160,7 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
     pressure_drop = np.zeros_like(T_range) *np.nan # [Pa] Pressure drop over channel (only if it drops stagnation pressure)
     is_channel_choked = np.zeros_like(T_range) * np.nan # [-] Going to be 0 if not choked, and 1 if chocked
     Re_channel_exit = np.zeros_like(T_range) * np.nan # [-] Reynolds number at throat
+    dP_contraction = np.zeros_like(T_range) * np.nan # [Pa] Pressure drop over sudden contraction at entrance
     #F = np.zeros_like(T_range) # [N] To store thrust that is iterated to, for debugging purposes
     #CF = np.zeros_like(T_range) # [-] To store thrust coefficient
 
@@ -169,6 +173,7 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
         P_loss[iter_T.index] = res['P_loss']
         l_channel[iter_T.index] = res['l_channel']
         pressure_drop[iter_T.index] = res['pressure_drop']
+        dP_contraction[iter_T.index] = res['dP_contraction']
         l_total[iter_T.index] = res['l_total']
         w_total[iter_T.index] = res['w_total']
 
@@ -189,15 +194,15 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
     ax_P_loss.set_xlabel("Wall temp [K]")
     ax_P_loss.set_ylabel("Heat loss [W]")
 
-    ax_l_total.plot(T_range+T_chamber, l_total*1e3, label="{:3.0f}".format(w_channel*1e6))
-    ax_l_total.set_ylabel("Chip length [mm]")
+    ax_l_total.plot(T_range+T_chamber, l_channel*1e3, label="{:3.0f}".format(w_channel*1e6))
+    ax_l_total.set_ylabel("Channel length [mm]")
     ax_l_total.set_xlabel("Wall temp [K]")
-    fig_l_total.suptitle("Chip length ($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
+    fig_l_total.suptitle("Channel length ($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
 
-    ax_pressure_drop.plot(T_range+T_chamber, pressure_drop*1e-5, label="{:3.0f}".format(w_channel*1e6))
+    ax_pressure_drop.plot(T_range+T_chamber, dP_contraction/pressure_drop, label="{:3.0f}".format(w_channel*1e6))
     ax_pressure_drop.set_xlabel("Wall temp [K]")
-    ax_pressure_drop.set_ylabel("Pressure drop [bar]")
-    fig_pressure_drop.suptitle("Pressure drop ($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
+    ax_pressure_drop.set_ylabel("Pressure drop contraction (fraction) [-]")
+    fig_pressure_drop.suptitle("Pressure drop contraction percentage($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
 
 
 
@@ -222,8 +227,19 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
     # plt.show()
 
 
-def optim_P_total(channel_amount, w_channel, h_channel, l_inlet_manifold, l_exit_manifold, w_channel_spacing, w_outer_margin, T_wall, p_ref, m_dot, \
+def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_factor, inlet_manifold_width_factor, l_exit_manifold, w_channel_spacing, w_outer_margin, T_wall, p_ref, m_dot, \
     prepared_values, Nusselt_relations, pressure_drop_relations, convergent_half_angle, divergent_half_angle, F_desired, p_back, AR_exit, w_throat, emissivity_top, fp: FluidProperties):
+    # First calculate area ratio at entrance so it can be provided to contraction pressure drop function
+    w_inlet_manifold = chamber.inlet_manifold_width(\
+            channel_amount=channel_amount,
+            w_channel=w_channel,
+            w_channel_spacing=w_channel_spacing,
+            inlet_manifold_width_factor=inlet_manifold_width_factor) # [m] Total width of inlet manifold
+    area_ratio_contraction = chamber.area_ratio_contraction(\
+        w_inlet_manifold=w_inlet_manifold,
+        w_channel=w_channel,
+        channel_amount=channel_amount) # [-] Area ratio of sudden contraction
+    
     # Calculate heat transfer to determine channel length
     res = oneD.rectangular_multi_channel_homogenous_calculation(\
         channel_amount=channel_amount,
@@ -234,8 +250,9 @@ def optim_P_total(channel_amount, w_channel, h_channel, l_inlet_manifold, l_exit
         h_channel=h_channel,
         m_dot=m_dot,
         T_wall=T_wall,
-        p_ref=p_ref,
-        fp=fp)
+        p_inlet=p_ref,
+        fp=fp,
+        area_ratio_contraction=area_ratio_contraction)
     
     l_channel = res['L_total'] # [m] Channel length
     p_chamber = res['p_chamber'] # [Pa] Pressure out channel outlet/inlet of nozzle according to IRT
@@ -250,6 +267,7 @@ def optim_P_total(channel_amount, w_channel, h_channel, l_inlet_manifold, l_exit
             'P_loss': np.nan, # [W] Current approximation of heat loss
             'l_channel': np.nan, # [m] Channel length
             'pressure_drop': np.nan, # [Pa] Total pressure drop
+            'dP_contraction': np.nan, # [Pa] Pressure drop de to contraction
             'w_total': np.nan, # [m] Total chip width
             'l_total': np.nan, # [m] Total chip length
             'is_channel_choked': np.nan,
@@ -269,7 +287,7 @@ def optim_P_total(channel_amount, w_channel, h_channel, l_inlet_manifold, l_exit
                 fp=fp
             )
 
-        # New throat width determined from desired performance parameter
+        # New throat widtl_inlet_manifoldmined from desired performance parameter
         w_throat_new = ep['A_throat']/h_channel # [m]
         # Check if new pressure, does not cause choked heating channels
         is_channel_choked = (w_channel*h_channel*channel_amount < ep['A_throat']) # [bool] If combined channel area is smaller than throat, they are choked.
@@ -287,12 +305,12 @@ def optim_P_total(channel_amount, w_channel, h_channel, l_inlet_manifold, l_exit
             AR_exit=AR_exit,
             l_exit_manifold=l_exit_manifold
             )
-
-        l_total = chamber.total_chip_length(l_inlet=l_inlet_manifold, l_channel=l_channel, l_outlet=l_outlet)
+        
+        
+        l_inlet_manifold = chamber.inlet_manifold_length(w_inlet_manifold=w_inlet_manifold, inlet_manifold_length_factor=inlet_manifold_length_factor)
+        l_total = chamber.total_chip_length(l_inlet_manifold=l_inlet_manifold, l_channel=l_channel, l_outlet=l_outlet)
         w_total = chamber.total_chip_width(\
-            channel_amount=channel_amount,
-            w_channel=w_channel,
-            w_channel_spacing=w_channel_spacing,
+            w_inlet_manifold=w_inlet_manifold,
             w_outer_margin=w_outer_margin,
             w_throat=w_throat_new,
             AR_exit=AR_exit)
@@ -304,6 +322,7 @@ def optim_P_total(channel_amount, w_channel, h_channel, l_inlet_manifold, l_exit
         return {'P_loss': 2*P_rad_loss_top, # [W] Current approximation of heat loss
                 'l_channel': l_channel, # [m] Channel length
                 'pressure_drop': res['dP_total'], # [Pa] Total pressure drop
+                'dP_contraction': res['dP_contraction'], # [Pa] Pressure drop due to contraction
                 'w_total': w_total, # [m] Total chip width
                 'l_total': l_total, # [m] Total chip length
                 'is_channel_choked': is_channel_choked, # [bool] 0 and 1 in this case, to check if channels are not too small
@@ -315,12 +334,12 @@ if __name__ == "__main__":
 
     # Go through several channel widths to plot
 
-    w_channel = ( 50e-6, 75e-6, 100e-6, 200e-6, 300e-6, 500e-6)
+    w_channel = ( 25e-6, 50e-6, 75e-6, 100e-6, 200e-6, 300e-6, 500e-6)
 
     # Create and figures and axes to plot on
     fig_P_loss = plt.figure()
     ax_P_loss = fig_P_loss.gca()
-    ax_P_loss.set_ylim(4, 12)
+    ax_P_loss.set_ylim(0, 12)
 
     fig_w_total = plt.figure()
     ax_w_total = fig_w_total.gca()
@@ -336,7 +355,7 @@ if __name__ == "__main__":
 
     fig_l_total = plt.figure()
     ax_l_total = fig_l_total.gca()
-    ax_l_total.set_ylim(10,50)
+    ax_l_total.set_ylim(0,50)
 
     # Reynolds channel exit would be interesting
     fig_Re_channel_exit = plt.figure()

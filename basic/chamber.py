@@ -280,28 +280,57 @@ def delta_enthalpy_per_section(h):
     delta_h = np.hstack((0, np.diff(h))) # [J/kg]
     return delta_h
 
-def total_chip_width(channel_amount, w_channel, w_channel_spacing, w_outer_margin, w_throat, AR_exit):
-    """Calculate total chip width, based on channel design and margins.
-
-    The outer chip width must check whether the nozzle exit or exit width is more important.
-    NOTE: Does not take into account if inlet margin is smaller or bigger
+def inlet_manifold_width(channel_amount, w_channel, w_channel_spacing, inlet_manifold_width_factor):
+    """Calculate total inlet manifold width, with margins, based on preset factors related to channel width
 
     Args:
-        channel_amount (-): Amount of channels
-        w_channel (m): Width of heatnig channel
-        w_channel_spacing (m): Spacing between channels
+        channel_amount (-): Number of channels
+        w_channel (m): Channel width
+        w_channel_spacing (m): Distance between channels
+        inlet_manifold_width_factor (-): Factor multiplied with channel width, that determines margin width
+
+    Returns:
+        inlet_manifold_width [m]: The total width of the inlet manifold
+    """
+    total_channel_width = channel_amount*w_channel + (channel_amount-1)*w_channel_spacing # [m]
+    inlet_manifold_width_margin = inlet_manifold_width_factor * w_channel # [m]
+
+    return total_channel_width + 2 *inlet_manifold_width_margin
+
+def inlet_manifold_length(w_inlet_manifold, inlet_manifold_length_factor):
+    """Determine inlet manifold length by multiplying it with a preset linear factor
+
+    Args:
+        w_inlet_manifold (m): Width of inlet manifold
+        inlet_manifold_length_factor (-): Multiplication factor to determine inlet length (large enough to divide and settle fluid)
+
+    Returns:
+        inlet_manifold_length (m): The length of the inlet manifold
+    """
+    return w_inlet_manifold * inlet_manifold_length_factor # [m] Length of the inlet manifold
+
+def total_chip_width(w_inlet_manifold, w_outer_margin, w_throat, AR_exit):
+    """Calculate total chip width, based on either the total width of the inlet manifold or the nozzle exit width, depending on which is larger.
+    A preset margin is added around the widest area (for a rectanguler chip)
+
+    The outer chip width must check whether the nozzle exit or exit width is more important.
+
+    Args:
+        inlet_manifold_width
         w_outer_margin (m): Spacing around the outside of outer channels
+        w_throat (m): Throat width
+        AR_exit (-): Exit area ratio
 
     Returns:
         w_chip: (m) Total width of chip
     """
 
-    heater_width_with_margin = 2* w_outer_margin + channel_amount*w_channel + (channel_amount-1)*w_channel_spacing # [m]
-    w_nozzle_exit_with_margin = 2* w_outer_margin + w_throat*AR_exit # [m]
 
-    return np.maximum( heater_width_with_margin , w_nozzle_exit_with_margin )# [m] Total width of chip
+    w_nozzle_exit =w_throat*AR_exit # [m] Nozzle exit width
 
-def total_chip_length(l_inlet, l_channel, l_outlet):
+    return 2*w_outer_margin +  np.maximum( w_inlet_manifold , w_nozzle_exit )# [m] Total width of chip
+
+def total_chip_length(l_inlet_manifold, l_channel, l_outlet):
     """ Return total channel length
 
     Args:
@@ -312,7 +341,7 @@ def total_chip_length(l_inlet, l_channel, l_outlet):
     Returns:
         l_chip: (m) Total chip length
     """
-    return l_inlet + l_channel + l_outlet
+    return l_inlet_manifold + l_channel + l_outlet
 
 def outlet_length(w_channel, w_channel_spacing, channel_amount, convergent_half_angle, w_throat, divergent_half_angle, AR_exit, l_exit_manifold=0.0):
     """Calculate the outlet length (entire nozzle + exit manifold) of a channel for the purpose of determining the entire rectangular chip size
@@ -366,3 +395,16 @@ def basic_substrate_heat_loss(T_top, kappa, emissivity, thickness, A_substrate):
     T_bottom = sol.root # [K] The root that puts heat fluxes in equilibrium
     P_loss = func_conduction(T_bottom) * A_substrate # [W] The actual power loss (could also be multiplied with radation heat flux)
     return P_loss # [W]
+
+def area_ratio_contraction(w_inlet_manifold, w_channel, channel_amount):
+    """Smaller area of channel divided by larger area of channel, which for the constant depth case is the ratio of widt
+
+    Args:
+        w_inlet_manifold (m): Width of inlet manifold (larger section)
+        w_channel (m): Channel width in smaller section
+        channel_amount (0): Amount of channels
+
+    Returns:
+        A_s/A_l : Area ratio of the sudden contraction
+    """
+    return w_channel*channel_amount/w_inlet_manifold # [-] Area ratio of smaller section A_s after contraction divided by larger section A_l before contraction

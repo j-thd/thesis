@@ -55,4 +55,4 @@ print("Chip area: {:2.3f} mm^2".format(A_chip*1e6))
 # plt.ylabel("Radiation loss $P_{{rad}}$ [W] ")
 # plt.title("One-sided radation loss (top wall)")
 # plt.grid()
-# plt.show()
+# plt.show()l_inlet_manifoldl_inlet_manifold
