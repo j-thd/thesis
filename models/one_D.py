@@ -569,21 +569,3 @@ def calc_single_phase_contraction_pressure_drop_Kawahara2015(args):
     zeta_C = (1-1/C_C)**2
     
     return zeta_C * args['total_dynamic_pressure']
-
-def calc_contraction_loss(dP_func, m_dot_channel, A_channel, D_hydraulic, p_inlet, T_inlet, area_ratio_contraction, fp:FluidProperties):
-    mass_flux = m_dot_channel/A_channel # [kg/(m^2*s)] Mass flux in single channel (same as all channels combined)
-    rho_inlet = fp.get_density(T=T_inlet,p=p_inlet) # [kg/m^3] Density in inlet manifold (assumed to be roughly equal to downstream density after pressure drop)
-    total_dynamic_pressure = 0.5 * mass_flux**2 / rho_inlet # [Pa] Total dynamic pressure (0.5*rho*u^2)
-    Re_downstream = fp.get_Reynolds_from_mass_flow(T=T_inlet, p=p_inlet, L_ref=D_hydraulic, m_dot=m_dot_channel, A=A_channel) # [-] Downstream Reynold's number in smaller channel
-
-
-    # Check if contraction relation is given
-    
-    args_contraction= {
-        'area_ratio_contraction': area_ratio_contraction,
-        'Re_Dh_downstream': Re_downstream, # [-] The downstream Reynold's number is simply the first element in the liquid phase Reynold's array
-        'total_dynamic_pressure': total_dynamic_pressure, 
-    }
-    dP_contraction = dP_func(args=args_contraction) # [Pa] Pressure drop due to sudden contraction
-
-    return dP_contraction # [Pa]

@@ -1,5 +1,6 @@
 # File to test functions of oneD.py
 
+from basic.chamber import area_ratio_contraction
 import unittest
 import numpy as np
 
@@ -433,12 +434,14 @@ class TestRectangularMultiChannelHomogenousCalculation(unittest.TestCase):
             'l': oneD.calc_single_phase_frictional_pressure_drop_low_Reynolds,
             'tp': oneD.calc_two_phase_frictional_pressure_drop_low_Reynolds,
             'g': oneD.calc_single_phase_frictional_pressure_drop_high_Reynolds,
+            'contraction': oneD.calc_single_phase_contraction_pressure_drop_Kawahara2015,
         }
        
 
         #Geometry
         w_channel = 100e-6 # [m] Width and height
         h_channel = 100e-6 # [m] Channel height
+        area_ratio_contraction = 0 # [-] Arbitrary input for contraction pressure drop
         steps = 3 
 
         self.prepared_values = oneD.full_homogenous_preparation(\
@@ -461,7 +464,8 @@ class TestRectangularMultiChannelHomogenousCalculation(unittest.TestCase):
             m_dot=m_dot,
             T_wall=T_wall,
             p_inlet=p_inlet,
-            fp=fp)
+            fp=fp,
+            area_ratio_contraction=area_ratio_contraction)
         return super().setUp()
 
     def testPressureDrop(self):
@@ -472,6 +476,10 @@ class TestRectangularMultiChannelHomogenousCalculation(unittest.TestCase):
         res_dP_l = self.res['dP_l']
         exp_dP_g = 9.143E+07 # [Pa] 
         res_dP_g = self.res['dP_g'] # [Pa]
+        exp_dP_contraction = 7.6266E+04 # [Pa]
+        res_dP_contraction = self.res['dP_contraction'] # [Pa]
+        exp_dP_total = 1.106544E+08 # [Pa]
+        res_dP_total = self.res['dP_total']
         # Yes, it is negative, but shouldn't matter, as long as calculation does what it is supposed to
         exp_p_chamber = -1.103781593E+08 # 2e5- res_dP_tp - res_dP_l - res_dP_g #-1.8893E+07 # [Pa]
         res_p_chamber = self.res['p_chamber'] # [Pa]
@@ -479,6 +487,8 @@ class TestRectangularMultiChannelHomogenousCalculation(unittest.TestCase):
         self.assertAlmostEqual(exp_dP_l, res_dP_l, delta=exp_dP_l*1.5e-3)
         self.assertAlmostEqual(exp_dP_tp, res_dP_tp, delta=exp_dP_tp*1.5e-2)
         self.assertAlmostEqual(exp_dP_g, res_dP_g, delta=exp_dP_g*1.5e-2)
+        self.assertAlmostEqual(exp_dP_contraction, res_dP_contraction, delta=exp_dP_contraction*1e-4)
+        self.assertAlmostEqual(exp_dP_total, res_dP_total, delta=exp_dP_total*5e-3)
         self.assertAlmostEqual(exp_p_chamber, res_p_chamber, delta=-exp_p_chamber*6e-3)
 
     def testLength(self):
@@ -548,3 +558,74 @@ class TestRectangularMultiChannelHomogenousCalculation(unittest.TestCase):
         self.assertAlmostEqual(exp_Pr_0, self.res['p_g']['Pr'][0], delta=exp_Pr_0*3e-2)
         self.assertAlmostEqual(exp_Pr_1, self.res['p_g']['Pr'][1], delta=exp_Pr_1*3e-2)
         self.assertAlmostEqual(exp_Pr_2, self.res['p_g']['Pr'][2], delta=exp_Pr_2*3e-2)
+
+    def testVelocity(self):
+        # Test velocities in various phases
+        exp_u_g = [\
+            8856.61,
+            9562.06,
+            10250.31]
+        res_u_g = self.res['res_g']['u'] # [m/s]
+        for exp, res in zip(exp_u_g, res_u_g):
+            self.assertAlmostEqual(exp,res,delta=0.5)
+
+        exp_u_tp = [\
+            10.6051,
+            4433.61,
+            8856.61]
+        res_u_tp = self.res['res_tp']['u'] # [m/s]
+        for exp, res in zip(exp_u_tp, res_u_tp):
+            self.assertAlmostEqual(exp,res,delta=0.5)
+
+        exp_u_l = [\
+            10.0341,
+            10.2484,
+            10.6051]
+        res_u_l = self.res['res_l']['u'] # [m/s]
+        for exp, res in zip(exp_u_l, res_u_l):
+            self.assertAlmostEqual(exp,res,delta=0.001)
+
+    def testReynolds(self):
+        # Gas phase check
+        exp_Re_1 = 7.1053E+04 # [Pa*s]
+        exp_Re_2 = 6.5759E+04 # [Pa*s]
+
+        self.assertAlmostEqual(exp_Re_1, self.res['res_g']['Re'][1], delta=exp_Re_1*1e-3)
+        self.assertAlmostEqual(exp_Re_2, self.res['res_g']['Re'][2], delta=exp_Re_2*1e-3)
+
+    def testNusselt(self):
+        # Gas phase check
+        exp_Nu_1 = 1.7422E+02 # [Pa*s]
+        exp_Nu_2 = 1.6271E+02 # [Pa*s]
+
+        self.assertAlmostEqual(exp_Nu_1, self.res['res_g']['Nu'][1], delta=exp_Nu_1*3e-2)
+        self.assertAlmostEqual(exp_Nu_2, self.res['res_g']['Nu'][2], delta=exp_Nu_2*3e-2)
+
+class TestCalcSinglePhaseContractionPressureDropKawahara2015(unittest.TestCase):
+    def testSimple(self):
+        args = {'area_ratio_contraction': 1,
+                'Re_Dh_downstream': 1,
+                'total_dynamic_pressure': 1}
+        
+        exp_dP = 0 # [Pa] Area ratio of 1 gives no pressure drop of course
+        res_dP = oneD.calc_single_phase_contraction_pressure_drop_Kawahara2015(args=args)
+        self.assertAlmostEqual(exp_dP, res_dP, delta=1e-30)
+
+        args = {'area_ratio_contraction': 0.5,
+                'Re_Dh_downstream': 100,
+                'total_dynamic_pressure': 1}
+
+        exp_dP = 4.510669484996588 # [Pa] Area ratio of 1 gives no pressure drop of course
+        res_dP = oneD.calc_single_phase_contraction_pressure_drop_Kawahara2015(args=args)
+        self.assertAlmostEqual(exp_dP, res_dP, delta=exp_dP*1e-10)
+
+        args = {'area_ratio_contraction': 0.5,
+                'Re_Dh_downstream': 100,
+                'total_dynamic_pressure': 100}
+
+        exp_dP = 4.510669484996588e2 # [Pa] Area ratio of 1 gives no pressure drop of course
+        res_dP = oneD.calc_single_phase_contraction_pressure_drop_Kawahara2015(args=args)
+        self.assertAlmostEqual(exp_dP, res_dP, delta=exp_dP*1e-10)
+
+
+        
