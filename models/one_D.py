@@ -222,6 +222,9 @@ def calc_homogenous_transition(p_sat, x, alpha, T_sat, rho_l, rho_g, rho, m_dot,
 
     # The Nusselt number is calculated in relation to liquid thermal conducitvity only
     h_conv = heat_transfer_coefficient_from_Nu(Nu=Nu, kappa=kappa_l, L_ref=D_hydr) # [W/(m^2 * K)] Heat transfer coefficient
+
+    # For backwards compatability with test code, effect of wall temperature thickness can be activate separetly and is off by default
+
     A_heater = required_heater_area(Q_dot=Q_dot, h_conv=h_conv, T_wall=T_wall, T_ref=T_sat) # [m^2] Required heater area to heat up section with Q_dot
     delta_L = A_heater / wetted_perimeter # [m] Required channel section length for heating area
     L = np.cumsum(delta_L) # [m] Cumulative channel length of two-phase section
@@ -387,10 +390,10 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
 
     # Calculate the total length of all sections, which is the sum of the last elements in each length array
     L_total = res_l['L'][-1] + res_tp['L'][-1] + res_g['L'][-1] # [m]
-    print("\n -- Lengths -- :")
-    print("Liquid: {:4.3f} mm".format(res_l['L'][-1]*1e3))
-    print("Two-phase: {:4.3f} mm".format(res_tp['L'][-1]*1e3))
-    print("Gas: {:4.3f} mm".format(res_g['L'][-1]*1e3))
+    # print("\n -- Lengths -- :")
+    # print("Liquid: {:4.3f} mm".format(res_l['L'][-1]*1e3))
+    # print("Two-phase: {:4.3f} mm".format(res_tp['L'][-1]*1e3))
+    # print("Gas: {:4.3f} mm".format(res_g['L'][-1]*1e3))
     # If necessary, calculate the pressure drop. If just ONE pressure drop relation is given, it stops being None.
     dP_total = None # [Pa] The pressure drop is returned as None if none is caluclated
     p_chamber = None # [Pa] The chamber pressure is returned as None if no pressure drop is calculated. It is purposefully not set to p_ref or p_inlet, as the user must be aware of which value he uses

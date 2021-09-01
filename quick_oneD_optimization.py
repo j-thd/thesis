@@ -22,7 +22,7 @@ style.use('tableau-colorblind10')
 def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fig_w_total, ax_l_total, fig_l_total, ax_pressure_drop, fig_pressure_drop, ax_is_choked, fig_is_choked,\
     ax_Re_channel_exit, fig_Re_channel_exit):
     # Taking some thruster data to make the optmization a bit similar to existing cases
-    td = None #thrusters.thruster_data.Cen2010_6
+    td = None#thrusters.thruster_data.Cen2010_6
 
     # Desired chamber outlet/nozzle inlet conditions
     # Switch between an existing thruster or a desired one
@@ -37,7 +37,8 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
         AR_exit = td['AR_exit'] # [-] Exit area of nozzle 
         w_throat = td['w_throat'] # [m] Throat width
         #w_channel = 1.7*td['w_channel'] #  [m] Channel width
-        l_inlet_manifold = 1e-3 # [m] Length before channel separates into multiple channels
+        inlet_manifold_length_factor = 2 # [m] Multiplication factor with inlet manifold width to determine manifold length
+        inlet_manifold_width_factor = 5.5 # [-] Multiplication factor (with channel width to determine margin in chamber)
         l_exit_manifold = 1e-3 # [m] Length between the end of multiple channels and start of convergent nozzle
         convergent_half_angle  = td['convergent_half_angle'] # [rad] Half-angle of the convergent part of the nozzle
         divergent_half_angle = td['divergent_half_angle'] # [rad] Half-angle of divergent part of the nozzle
@@ -79,9 +80,9 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
         l_exit_manifold = 0 # [m] Length between the end of multiple channels and start of convergent nozzle
         convergent_half_angle  = math.radians(45) # [rad] Half-angle of the convergent part of the nozzle
         divergent_half_angle = math.radians(22.5) # [rad] Half-angle of divergent part of the nozzle
-        w_channel_spacing = 50e-6 # [m] Spacing between channels (wall-to-wall)
+        w_channel_spacing = 1e-6 # [m] Spacing between channels (wall-to-wall)
         w_outer_margin = 2e-3 # [m] Margin around the outer channels for structural integrity
-        channel_amount = 8 # [-] Number of channels
+        channel_amount = 24 # [-] Number of channels
         emissivity_chip_top = 0.5 # [-] Assumed emissivity of chip at top-side
 
     # Desired geometric values
@@ -334,7 +335,7 @@ if __name__ == "__main__":
 
     # Go through several channel widths to plot
 
-    w_channel = ( 25e-6, 50e-6, 75e-6, 100e-6, 200e-6, 300e-6, 500e-6)
+    w_channel = ( 5e-6, 10e-6, 25e-6, 50e-6, 75e-6, 100e-6, 200e-6, 300e-6)
 
     # Create and figures and axes to plot on
     fig_P_loss = plt.figure()
