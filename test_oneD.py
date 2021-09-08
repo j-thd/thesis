@@ -628,4 +628,81 @@ class TestCalcSinglePhaseContractionPressureDropKawahara2015(unittest.TestCase):
         self.assertAlmostEqual(exp_dP, res_dP, delta=exp_dP*1e-10)
 
 
-        
+class TestCalcWallEffectsSimple(unittest.TestCase):
+    def setUp(self):
+        h_conv = 100 # [W/(m^2*K)]
+        w_channel_spacing = 50e-6
+        kappa_wall = 100 # [W/(m*K)]
+        h_channel = 100e-6 # [m]
+        w_channel = 200e-6 # [m]
+        T_wall_top = 1000 # [K]
+        T_wall_bottom = 600 # [K]
+        T_fluid = 500 # [K]
+        emissivity_chip_bottom = 0.5 # [-]
+
+        self.we = oneD.calc_wall_effect_parameters(\
+            h_conv=h_conv,
+            w_channel_spacing=w_channel_spacing,
+            kappa_wall=kappa_wall,
+            h_channel=h_channel,
+            w_channel=w_channel,
+            T_wall_top=T_wall_top,
+            T_wall_bottom=T_wall_bottom,
+            T_fluid=T_fluid)
+
+        # Test bottom plane heat transfer
+
+        wall_args = {
+            'kappa_wall': kappa_wall,
+            'T_wall_bottom': T_wall_bottom,
+            'h_channel': h_channel,
+            'w_channel': w_channel,
+            'w_channel_spacing': w_channel_spacing,
+            'emissivity_chip_bottom': emissivity_chip_bottom,
+        }
+
+        delta_L = 1e-4*np.array([1,5]) # [m] Lengths of channel sections
+        self.Q_bottom_plane_heat_transfer = oneD.calc_bottom_plane_heat_balance(\
+            h_conv=h_conv,
+            T_fluid=T_fluid,
+            we=self.we,
+            wall_args=wall_args,
+            delta_L=delta_L)
+
+    def testMSimple(self):
+        # Test the wall parameter
+        exp_m = 200 # [1/m]
+        res_m = self.we['m']
+
+        self.assertAlmostEqual(exp_m, res_m, delta=exp_m*1e-9)
+
+    def testC1_C2(self):
+        # Test the coefficients of the boundary value problem
+        exp_C1 = -20003.66656 # [K]
+        exp_C2 = 500 # [K]
+        res_C1 = self.we['C1'] # [K]
+        res_C2 = self.we['C2'] # [K]
+
+        self.assertAlmostEqual(exp_C1, res_C1, delta=abs(exp_C1*1e-9))
+        self.assertAlmostEqual(exp_C2, res_C2, delta=exp_C2*1e-9)
+
+    def testT_wall_side_effective(self):
+        exp_T_wall_side_effective = 799.990000400 # [K]
+        res_T_wall_side_effective = self.we['T_wall_side_effective']
+        self.assertAlmostEqual(exp_T_wall_side_effective, res_T_wall_side_effective, delta=exp_T_wall_side_effective*1e-9)
+
+    def testT_wall_effective(self):
+        exp_T_wall_effective = 799.996666800 # [K]
+        res_T_wall_effective = self.we['T_wall_effective']
+        self.assertAlmostEqual(exp_T_wall_effective, res_T_wall_effective, delta=exp_T_wall_effective*1e-9)
+
+    def test_grad_theta_L(self):
+        exp_grad_theta_L = -3999533.352 # [K/m]
+        res_grad_theta_L = self.we['grad_theta_L'] 
+        self.assertAlmostEqual(exp_grad_theta_L, res_grad_theta_L, delta=abs(exp_grad_theta_L*1e-9))
+    
+    def test_bottom_plane_heat_balance(self):
+        exp_Q_heat_balance = 11.99684890 # [W]
+        res_Q_heat_balance = self.Q_bottom_plane_heat_transfer # [W]
+
+        self.assertAlmostEqual(exp_Q_heat_balance, res_Q_heat_balance, delta=abs(exp_Q_heat_balance*1e-9))

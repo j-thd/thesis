@@ -17,7 +17,7 @@ from basic.IRT import engine_performance_from_F_and_T
 import physical_constants
 
 # Set plotting style to colourblind-friendly style
-style.use('tableau-colorblind10')
+#style.use('tableau-colorblind10')
 
 def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fig_w_total, ax_l_total, fig_l_total, ax_pressure_drop, fig_pressure_drop, ax_is_choked, fig_is_choked,\
     ax_Re_channel_exit, fig_Re_channel_exit):
@@ -84,6 +84,19 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
         w_outer_margin = 2e-3 # [m] Margin around the outer channels for structural integrity
         channel_amount = 24 # [-] Number of channels
         emissivity_chip_top = 0.5 # [-] Assumed emissivity of chip at top-side
+        emissivity_chip_bottom = 0.5 # [-]
+
+        # Wall effects
+        kappa_wall = 100 # [W/(m*K)]Thermal conductivity of the silicon walls
+        T_wall_bottom = T_chamber
+        wall_args = {
+            'kappa_wall': kappa_wall,
+            'T_wall_bottom': T_wall_bottom,
+            'h_channel': h_channel,
+            'w_channel': w_channel,
+            'w_channel_spacing': w_channel_spacing,
+            'emissivity_chip_bottom': emissivity_chip_bottom,
+        }
 
     # Desired geometric values
     
@@ -107,7 +120,7 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
     }
 
     # Fidelity of simulation
-    steps_per_section = 50 # [-] Amount of subdivision in each section 
+    steps_per_section = 10 # [-] Amount of subdivision in each section 
     steps_l = steps_per_section
     steps_tp = steps_per_section
     steps_g = steps_per_section
@@ -147,11 +160,12 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
         AR_exit=AR_exit,
         w_throat=w_throat,
         emissivity_top=emissivity_chip_top,
-        fp=fp
+        fp=fp,
+        wall_args=wall_args
     )
 
     # Fist make a plot to see what's going on
-    T_range = np.linspace(start=10, stop=500, num=50) # [K]
+    T_range = np.linspace(start=10, stop=500, num=25) # [K]
     
     # Store calculated heat loss here
     P_loss = np.zeros_like(T_range) * np.nan # [W] Heat loss
@@ -229,7 +243,7 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
 
 
 def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_factor, inlet_manifold_width_factor, l_exit_manifold, w_channel_spacing, w_outer_margin, T_wall, p_ref, m_dot, \
-    prepared_values, Nusselt_relations, pressure_drop_relations, convergent_half_angle, divergent_half_angle, F_desired, p_back, AR_exit, w_throat, emissivity_top, fp: FluidProperties):
+    prepared_values, Nusselt_relations, pressure_drop_relations, convergent_half_angle, divergent_half_angle, F_desired, p_back, AR_exit, w_throat, emissivity_top, fp: FluidProperties, wall_args=None):
     # First calculate area ratio at entrance so it can be provided to contraction pressure drop function
     w_inlet_manifold = chamber.inlet_manifold_width(\
             channel_amount=channel_amount,
@@ -253,7 +267,8 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
         T_wall=T_wall,
         p_inlet=p_ref,
         fp=fp,
-        area_ratio_contraction=area_ratio_contraction)
+        area_ratio_contraction=area_ratio_contraction,
+        wall_args=wall_args)
     
     l_channel = res['L_total'] # [m] Channel length
     p_chamber = res['p_chamber'] # [Pa] Pressure out channel outlet/inlet of nozzle according to IRT
@@ -335,7 +350,7 @@ if __name__ == "__main__":
 
     # Go through several channel widths to plot
 
-    w_channel = ( 5e-6, 10e-6, 25e-6, 50e-6, 75e-6, 100e-6, 200e-6, 300e-6)
+    w_channel = (10e-6, 25e-6, 50e-6, 75e-6, 100e-6, 200e-6)
 
     # Create and figures and axes to plot on
     fig_P_loss = plt.figure()

@@ -80,7 +80,7 @@ def radiation_loss(T, A, emmisivity):
     #print(type(T))
     #print("Temperature**4: {} ".format(T**4))
     #print(type(A))
-    A = float(A)
+    #A = float(A)
     #print("Area: {}".format(A))
     #print(type(A))
     #print(type(emmisivity))
