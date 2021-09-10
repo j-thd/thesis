@@ -81,9 +81,9 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
         l_exit_manifold = 0 # [m] Length between the end of multiple channels and start of convergent nozzle
         convergent_half_angle  = math.radians(45) # [rad] Half-angle of the convergent part of the nozzle
         divergent_half_angle = math.radians(22.5) # [rad] Half-angle of divergent part of the nozzle
-        w_channel_spacing = 5e-5 # [m] Spacing between channels (wall-to-wall)
+        w_channel_spacing = 0.5e-5 # [m] Spacing between channels (wall-to-wall)
         w_outer_margin = 2e-3 # [m] Margin around the outer channels for structural integrity
-        channel_amount = 1 # [-] Number of channels
+        channel_amount = 20 # [-] Number of channels
         emissivity_chip_top = 0.5 # [-] Assumed emissivity of chip at top-side
         emissivity_chip_bottom = 0.5 # [-]
 
@@ -166,7 +166,7 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
     )
 
     # Fist make a plot to see what's going on
-    T_range = np.linspace(start=40, stop=250, num=200) # [K]
+    T_range = np.linspace(start=50, stop=200, num=200) # [K]
     
     # Store calculated heat loss here
     P_loss = np.zeros_like(T_range) * np.nan # [W] Heat loss
@@ -206,37 +206,37 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
     print("Minumum heat loss: {:2.3f} W".format(np.nanmin(P_loss)))
 
     #ax2 = ax1.twinx()
-    ax_P_loss.plot(T_range+T_chamber, P_loss, label="{:3.0f}".format(w_channel*1e6))
+    ax_P_loss.plot(T_range+T_chamber, P_loss, label="{:3.1f}".format(w_channel*1e6))
     
     fig_P_loss.suptitle("Heat loss ($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
     ax_P_loss.set_xlabel("Wall temp [K]")
     ax_P_loss.set_ylabel("Heat loss [W]")
 
-    ax_l_total.plot(T_range+T_chamber, l_channel*1e3, label="{:3.0f}".format(w_channel*1e6))
+    ax_l_total.plot(T_range+T_chamber, l_channel*1e3, label="{:3.1f}".format(w_channel*1e6))
     ax_l_total.set_ylabel("Channel length [mm]")
     ax_l_total.set_xlabel("Wall temp [K]")
     fig_l_total.suptitle("Channel length ($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
 
-    ax_pressure_drop.plot(T_range+T_chamber, pressure_drop*1e-5, label="{:3.0f}".format(w_channel*1e6))
+    ax_pressure_drop.plot(T_range+T_chamber, pressure_drop*1e-5, label="{:3.1f}".format(w_channel*1e6))
     ax_pressure_drop.set_xlabel("Wall temp [K]")
     ax_pressure_drop.set_ylabel("Pressure drop [bar]")
     fig_pressure_drop.suptitle("Pressure drop ($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
 
 
 
-    ax_is_choked.plot(T_range+T_chamber, is_channel_choked, marker='o', linestyle=" ", label="{:3.0f}".format(w_channel*1e6))
+    ax_is_choked.plot(T_range+T_chamber, is_channel_choked, marker='o', linestyle=" ", label="{:3.1f}".format(w_channel*1e6))
     ax_is_choked.set_xlabel("Wall temp [K]")
     ax_is_choked.set_ylabel("Choked ?")
     fig_is_choked.suptitle("Choked? ($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
  
 
 
-    ax_w_total.plot(T_range+T_chamber, w_total*1e3, label="{:3.0f}".format(w_channel*1e6))
+    ax_w_total.plot(T_range+T_chamber, w_total*1e3, label="{:3.1f}".format(w_channel*1e6))
     ax_w_total.set_xlabel("Wall temp [K]")
     ax_w_total.set_ylabel("Chip width [mm] ")
     fig_w_total.suptitle("Chip width ($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
 
-    ax_Re_channel_exit.plot(T_range+T_chamber, Re_channel_exit, label="{:3.0f}".format(w_channel*1e6))
+    ax_Re_channel_exit.plot(T_range+T_chamber, Re_channel_exit, label="{:3.1f}".format(w_channel*1e6))
     ax_Re_channel_exit.set_xlabel("Wall temp [K]")
     ax_Re_channel_exit.set_ylabel("Reynolds Channel [mm] ")
     fig_Re_channel_exit.suptitle("Reynolds channel($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
@@ -287,7 +287,7 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
     # Too high a lower bound results in the solution not being within the bounds at all.
     # The quick and dirty solution here is to stepwise move the bounds down until the valid solution is between it.
     # The stepsize must be small enough to reliably avoid the scenario where the calculations are completely incorrect.
-    delta_T_bounds = 20 # [K] The size of the bound shift could determine how low the bounds can go to the final chamber temperature without resulting into incorrection calculations
+    delta_T_bounds = 25 # [K] The size of the bound shift could determine how low the bounds can go to the final chamber temperature without resulting into incorrection calculations
    
     ## The resultant channel length, pressure drops, etc, depends on bottom wall temperature. It must be iterated towards here.
     T_wall_bottom_min = T_wall-delta_T_bounds# [K] Minimum temperature is in practice probably not lower than chamber temperature (not impossible, though)
@@ -397,9 +397,10 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
 
         A_chip = l_total*w_total # [m^2]
 
-        P_rad_loss_top = 2*chamber.radiation_loss(T=T_wall, A=A_chip, emmisivity=emissivity_top) # [W]  Radiation loss through top of chip
-
-        return {'P_loss': 2*P_rad_loss_top, # [W] Current approximation of heat loss
+        P_rad_loss_top = chamber.radiation_loss(T=T_wall, A=A_chip, emmisivity=emissivity_top) # [W]  Radiation loss through top of chip
+        P_rad_loss_bottom = chamber.radiation_loss(T=wall_args['T_wall_bottom'],A=A_chip, emmisivity=wall_args['emissivity_chip_bottom']) # Radiation loss through bottom of chip
+        P_loss = P_rad_loss_top + P_rad_loss_bottom # [W] Total heat loss
+        return {'P_loss': P_loss, # [W] Current approximation of heat loss
                 'l_channel': l_channel, # [m] Channel length
                 'pressure_drop': res['dP_total'], # [Pa] Total pressure drop
                 'dP_contraction': res['dP_contraction'], # [Pa] Pressure drop due to contraction
@@ -414,7 +415,7 @@ if __name__ == "__main__":
 
     # Go through several channel widths to plot
 
-    w_channel = (25e-6,27.5e-6,30e-6,35e-6,40e-6,500e-6) #(10e-6, 25e-6, 50e-6, 75e-6, 100e-6, 200e-6)
+    w_channel = (25e-6,27.5e-6,30e-6,35e-6,40e-6) #(10e-6, 25e-6, 50e-6, 75e-6, 100e-6, 200e-6)
 
     # Create and figures and axes to plot on
     fig_P_loss = plt.figure()
