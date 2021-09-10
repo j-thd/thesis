@@ -23,7 +23,7 @@ Nu_func_dryout = thermo.two_phase.Nu_DB_two_phase #thermo.two_phase.Nu_DB_two_ph
 #bla
 # For da Silva's thrusters the numbers have to fudged a bit, because the reported temperatures
 # seem inconsitent with saturation temperatures and/or reported wall temperatures
-T_wall = 600                            # [K] Wall temperature
+T_wall = 1000                            # [K] Wall temperature
 w_channel = td['w_channel']             # [m] Channel width
 T_inlet = td['T_inlet']                 # [K] Inlet temperature
 T_chamber = 500                         # [K] Chamber temperature
@@ -62,6 +62,7 @@ res_l = oneD.calc_channel_single_phase(\
 # Store results for plotting or adding new points
 T = p_l['T'] # [K] Flow temperature 
 L = res_l['L'] # [m] Channel length x at given temperature T
+delta_L = res_l['delta_L'] # [m] Channel section length
 Nu = res_l['Nu'] # [-] Nusselt number at given temperature T
 Re = res_l['Re'] # [-] Reynolds number at given temperature T
 Pr = p_l['Pr'] # [-] Prandtl number at given temperature T
@@ -125,6 +126,7 @@ print("Two-phase length: {:2.3f} mm".format(1e3*res_tp['L'][-1]))
 
 T_tp = np.ones_like(x_tp) * T_sat # [K]
 L_tp = res_tp['L'] + L[-1] # [m] Add length of previous section
+delta_L_tp = res_tp['delta_L'] # [m] Channel section length
 u_tp = res_tp['u']
 rho_tp = res_tp['rho']
 Nu_tp = res_tp['Nu']
@@ -139,6 +141,7 @@ h_conv_tp = res_tp['h_conv']
 
 T = np.hstack((T, T_tp)) # [K]
 L = np.hstack((L, L_tp)) # [m]
+delta_L = np.hstack((delta_L,delta_L_tp))
 x = np.hstack((x, x_tp)) # [-]
 alpha = np.hstack((alpha, alpha_tp)) # [-]
 rho = np.hstack((rho, rho_tp)) # [kg/m^3]
@@ -183,6 +186,7 @@ T_g = p_g['T']
 x_g = np.ones_like(T_g)
 alpha_g = np.ones_like(T_g) 
 L_g = res_g['L'] + L[-1] # [m] Add length of previous section
+delta_L_g = res_g['delta_L'] # [m] Channel section length
 u_g = res_g['u']
 rho_g = p_g['rho']
 Nu_g = res_g['Nu']
@@ -200,6 +204,7 @@ T = np.hstack((T, T_g))
 x = np.hstack((x, x_g))
 alpha = np.hstack((alpha, alpha_g))
 L = np.hstack((L, L_g))
+delta_L = np.hstack((delta_L,delta_L_g))
 u = np.hstack((u, u_g))
 rho = np.hstack((rho, rho_g))
 Nu = np.hstack((Nu, Nu_g))
@@ -211,6 +216,11 @@ h_conv = np.hstack((h_conv, h_conv_g))
 print("Lengtish {:10.10f} mm".format(1e3*L[-2]))
 print("Length: {:1.3f} mm".format(1e3*L[-1]))
 print("Last Nu {:2.34}".format(Nu[-1]))
+
+# Average h-conv
+h_conv_average = np.sum(h_conv * delta_L) / L[-1] 
+print("Average h_conv: {:5.3f} W/(m^2*K)".format(h_conv_average))
+
 
 fig, axs = plt.subplots(3,3)
 # Top left

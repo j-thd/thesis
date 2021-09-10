@@ -96,10 +96,44 @@ def calc_channel_single_phase(T, Q_dot, rho, Pr, kappa, mu, p_ref, m_dot, T_wall
         })
     # Convective heat transfer parameter
     h_conv = heat_transfer_coefficient_from_Nu(Nu=Nu, kappa=kappa, L_ref=D_hydr)
+
+    # For backwards compatability with test code, effect of wall temperature thickness can be activate separetly and is off by default
+    we = None # Pass nothing to end result, if no wall arguments are passed
+    if wall_args is not None: # If no information about wall is provided, skip this part
+        # Call function to get dictionary of relevant wall effect parameters
+        we = calc_wall_effect_parameters(\
+            h_conv=h_conv,
+            w_channel_spacing=wall_args['w_channel_spacing'],
+            kappa_wall=wall_args['kappa_wall'], # Thermal conductivity of the wall
+            h_channel=wall_args['h_channel'], # NOTE: these arguments were not already passed to this function, due to earlier design choices
+            w_channel=wall_args['w_channel'],
+            T_wall_top=T_wall, # The temperature of the top is simply the heater temperature at the top, which was earlier set to T_wall
+            T_wall_bottom=wall_args['T_wall_bottom'], # IMPORTANT: The bottom wall temperature is the one that must be guessed or iterated towards!
+            T_fluid=T) # The fluid temperature keeps changing
+            
+        T_wall = we['T_wall_effective'] # [K]
+
+    #print("(Effective) wall temperature (K): ")
+    assert(np.all(T_wall>T))
+    #print(T_wall-T)
     # Calculate the heat flux in a channel section
     A_heating = required_heater_area(Q_dot=Q_dot, h_conv=h_conv, T_wall=T_wall, T_ref=T) # [m^2] Heating area required to deliver Q_dot
+    assert(np.all(A_heating>=0))
+    assert(wetted_perimeter >0)
     delta_L = A_heating / wetted_perimeter # [m] Length of channel sections to obtain A_heating
+    assert(np.all(delta_L>=0))
     L = np.cumsum(delta_L)
+
+    # Note, now the channel length is known, the heat transfer in the plane of the bottom wall can be calculated (which must be equal to radiation heat loss)
+    # This is only necessary if wall effects are taken into account
+    Q_bottom_plane_heat_balance = None # [W] Is None unless calculated to prevent use if not actually calculated
+    if we is not None:
+        Q_bottom_plane_heat_balance = calc_bottom_plane_heat_balance( 
+            h_conv=h_conv,
+            T_fluid=T,
+            we=we,
+            wall_args=wall_args,
+            delta_L=delta_L) 
     
     # Return a dictionary with values of interest
     return {
@@ -110,6 +144,7 @@ def calc_channel_single_phase(T, Q_dot, rho, Pr, kappa, mu, p_ref, m_dot, T_wall
         'u': u, # [m/s] Flow velocity
         'h_conv': h_conv, # [W/(m*K)] Convective heat transfer parameter 
         'delta_L': delta_L, # [m] Length of each section
+        'Q_bottom_plane_heat_balance': Q_bottom_plane_heat_balance, # [W] Difference in power in the bottom plane heat balance
     }
 
 ## Two functions for multi-phase saturation phase from x=0 to x=1
@@ -269,24 +304,25 @@ def calc_homogenous_transition(p_sat, x, alpha, T_sat, rho_l, rho_g, rho, m_dot,
             
         T_wall = we['T_wall_effective'] # [K]
 
-    print("(Effective) wall temperature (K): ")
-    print(T_wall)
+    # print("(Effective) wall temperature (K): ")
+    # print(T_wall)
 
     # NOTE: T_wall may be replaced if T_wall is changed due to calculated wall effects
     A_heater = required_heater_area(Q_dot=Q_dot, h_conv=h_conv, T_wall=T_wall, T_ref=T_sat) # [m^2] Required heater area to heat up section with Q_dot
     delta_L = A_heater / wetted_perimeter # [m] Required channel section length for heating area
+    #assert(np.all(delta_L>0))
     L = np.cumsum(delta_L) # [m] Cumulative channel length of two-phase section
 
     # Note, now the channel length is known, the heat transfer in the plane of the bottom wall can be calculated (which must be equal to radiation heat loss)
     # This is only necessary if wall effects are taken into account
-    Q_bottom_plane = None # [W] Is None unless calculated to prevent use if not actually calculated
+    Q_bottom_plane_heat_balance = None # [W] Is None unless calculated to prevent use if not actually calculated
     if we is not None:
-        Q_bottom_plane = calc_bottom_plane_heat_balance(
+        Q_bottom_plane_heat_balance = calc_bottom_plane_heat_balance( 
             h_conv=h_conv,
             T_fluid=T_sat,
             we=we,
             wall_args=wall_args,
-            delta_L=delta_L) #[W]
+            delta_L=delta_L) 
         
 
 
@@ -299,6 +335,7 @@ def calc_homogenous_transition(p_sat, x, alpha, T_sat, rho_l, rho_g, rho, m_dot,
         'Nu': Nu,
         'Nu_le': Nu_le,
         'h_conv': h_conv,
+        'Q_bottom_plane_heat_balance': Q_bottom_plane_heat_balance,
     }
 
 ## Just one extra function needed for the gas phase, as inputs should be the same as single-phase function for liquid
@@ -535,6 +572,19 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
         # Some values that may be of use, and are best calculated once correctly
         T_chamber = p_g['T'][-1] # Last temperature in prepared gas phase values is chamber temperature (according to IRT)
 
+        # Sum up the heat balances in the bottom plane if wall effects are calculated
+        Q_total_bottom_plane_heat_balance = None # [W] Heat balance is set to None so it is not accidently used without being calculated
+        if wall_args is not None:
+            Q_l = res_l['Q_bottom_plane_heat_balance']
+            Q_tp = res_tp['Q_bottom_plane_heat_balance']
+            Q_g = res_g['Q_bottom_plane_heat_balance']
+            #print("Q_l: {:3.2f} W".format(Q_l))
+            #print("Q_tp: {:3.2f} W".format(Q_tp))
+            #print("Q_g: {:3.2f} W".format(Q_g))
+            Q_total_bottom_plane_heat_balance = Q_l + Q_tp + Q_g
+            # Should eventually be zero
+            
+
 
     return {
         'p_g': p_g,
@@ -551,6 +601,7 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
         'dP_total': dP_total,
         'p_chamber': p_chamber,
         'T_chamber': T_chamber,
+        'Q_total_bottom_plane_heat_balance': Q_total_bottom_plane_heat_balance, 
     }
 
 def rectangular_multi_channel_homogenous_calculation(channel_amount, prepared_values, Nusselt_relations, pressure_drop_relations, w_channel, h_channel, m_dot, T_wall, p_inlet, fp: FluidProperties, area_ratio_contraction=None, wall_args=None):
@@ -651,9 +702,9 @@ def calc_wall_effect_parameters(h_conv, w_channel_spacing, kappa_wall, h_channel
         C1 and C2 (K): Two coefficients of the general solution that determine temperature profile
     """
 
-    assert T_wall_top>T_wall_bottom
+    #assert T_wall_top>=T_wall_bottom
     #assert T_fluid > T_wall_bottom
-    assert T_fluid < T_wall_top
+    assert np.all(T_fluid < T_wall_top)
 
     m = np.sqrt(2*h_conv/(kappa_wall*w_channel_spacing)) # [m^(-1)] Characteristic parameter for temperature profile through wall
     cosh_mL = np.cosh(m*h_channel) # [-]
@@ -677,7 +728,7 @@ def calc_wall_effect_parameters(h_conv, w_channel_spacing, kappa_wall, h_channel
     T_wall_effective = ( ( T_wall_top + T_wall_bottom)*w_channel + 2*T_wall_side_effective*h_channel) / \
         ( 2 * (w_channel + h_channel) ) # [K] Effective wall temperature, temperatures weighted by relative perimeter
 
-    assert np.all(T_wall_effective > 0)
+    assert np.all(T_wall_effective > T_fluid)
     
 
     return {
@@ -701,7 +752,16 @@ def calc_bottom_plane_heat_balance(h_conv, T_fluid, we, wall_args, delta_L):
     Returns:
         Q_heat_transfer (W): total heat transfer from the bottom wall to the fluid, and through the wall at lowest wall section
     """
+    # print("\nT_wall_bottom: {:3.1f} K".format(wall_args['T_wall_bottom']))
+    # print("H_conv:")
+    # print(h_conv)
+    # print("Grad_theta_L:")
+    # print(we['grad_theta_L'])
+    # print("Delta_L:")
+    # print(delta_L)
     Q_conduction_in = -wall_args['kappa_wall']*we['grad_theta_L']*wall_args['w_channel_spacing']*delta_L # [W] Heat flowing in through wall conduction
+    # print(" --- Q_conduction_in: ---")
+    # print(Q_conduction_in)
     Q_convection_out = h_conv*(wall_args['T_wall_bottom']-T_fluid)*wall_args['w_channel']*delta_L # [W] Heat flowing from bottom wall to fluid through convection
     dA_bottom = (wall_args['w_channel']+wall_args['w_channel_spacing'])*delta_L
     Q_radiation_out = radiation_loss(T=wall_args['T_wall_bottom'],A=dA_bottom,emmisivity=wall_args['emissivity_chip_bottom'])  # [W] Heat radiated from bottom of chip
@@ -710,6 +770,11 @@ def calc_bottom_plane_heat_balance(h_conv, T_fluid, we, wall_args, delta_L):
     Q_conduction_total = np.sum(Q_conduction_in) # [W]
     Q_convection_total = np.sum(Q_convection_out) # [W]
     Q_radiation_total = np.sum(Q_radiation_out) # [W]
+
+    
+    # print("Q_conduction_total: {:3.1f} W".format(Q_conduction_total))
+    # print("Q_convection_total: {:3.1f} W".format(Q_convection_total))
+    # print("Q_radiation_total: {:3.1f} W".format(Q_radiation_total))
 
 
     return Q_conduction_total - Q_convection_total - Q_radiation_total # [W] Heat difference that must be compensated by radiation loss for the solution to be valid

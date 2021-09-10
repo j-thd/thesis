@@ -5,7 +5,8 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.style as style  
+import matplotlib.style as style 
+from scipy.optimize import root_scalar
 
 import models.one_D as oneD
 import thrusters.thruster_data
@@ -80,9 +81,9 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
         l_exit_manifold = 0 # [m] Length between the end of multiple channels and start of convergent nozzle
         convergent_half_angle  = math.radians(45) # [rad] Half-angle of the convergent part of the nozzle
         divergent_half_angle = math.radians(22.5) # [rad] Half-angle of divergent part of the nozzle
-        w_channel_spacing = 1e-6 # [m] Spacing between channels (wall-to-wall)
+        w_channel_spacing = 5e-5 # [m] Spacing between channels (wall-to-wall)
         w_outer_margin = 2e-3 # [m] Margin around the outer channels for structural integrity
-        channel_amount = 24 # [-] Number of channels
+        channel_amount = 1 # [-] Number of channels
         emissivity_chip_top = 0.5 # [-] Assumed emissivity of chip at top-side
         emissivity_chip_bottom = 0.5 # [-]
 
@@ -120,7 +121,7 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
     }
 
     # Fidelity of simulation
-    steps_per_section = 10 # [-] Amount of subdivision in each section 
+    steps_per_section = 100 # [-] Amount of subdivision in each section 
     steps_l = steps_per_section
     steps_tp = steps_per_section
     steps_g = steps_per_section
@@ -165,7 +166,7 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
     )
 
     # Fist make a plot to see what's going on
-    T_range = np.linspace(start=10, stop=500, num=25) # [K]
+    T_range = np.linspace(start=40, stop=250, num=200) # [K]
     
     # Store calculated heat loss here
     P_loss = np.zeros_like(T_range) * np.nan # [W] Heat loss
@@ -182,7 +183,9 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
     iter_T = np.nditer(T_range, flags=['c_index'])
 
     for T in iter_T:
+        #print("\n\n --- RUN {} ---- ".format(iter_T.index))
         res = func_P_loss(T)
+        
         
 
         P_loss[iter_T.index] = res['P_loss']
@@ -214,10 +217,10 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
     ax_l_total.set_xlabel("Wall temp [K]")
     fig_l_total.suptitle("Channel length ($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
 
-    ax_pressure_drop.plot(T_range+T_chamber, dP_contraction/pressure_drop, label="{:3.0f}".format(w_channel*1e6))
+    ax_pressure_drop.plot(T_range+T_chamber, pressure_drop*1e-5, label="{:3.0f}".format(w_channel*1e6))
     ax_pressure_drop.set_xlabel("Wall temp [K]")
-    ax_pressure_drop.set_ylabel("Pressure drop contraction (fraction) [-]")
-    fig_pressure_drop.suptitle("Pressure drop contraction percentage($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
+    ax_pressure_drop.set_ylabel("Pressure drop [bar]")
+    fig_pressure_drop.suptitle("Pressure drop ($\\dot{{m}}={:3.2f}$ mg$\\cdot$s$^{{-1}}$, $p={:1.2f}$ bar, $T={:3.0f}$ K)".format(m_dot*1e6, p_inlet*1e-5, T_chamber))
 
 
 
@@ -255,21 +258,82 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
         w_channel=w_channel,
         channel_amount=channel_amount) # [-] Area ratio of sudden contraction
     
-    # Calculate heat transfer to determine channel length
-    res = oneD.rectangular_multi_channel_homogenous_calculation(\
-        channel_amount=channel_amount,
-        prepared_values=prepared_values,
-        Nusselt_relations=Nusselt_relations,
-        pressure_drop_relations=pressure_drop_relations,
-        w_channel=w_channel,
-        h_channel=h_channel,
-        m_dot=m_dot,
-        T_wall=T_wall,
-        p_inlet=p_ref,
-        fp=fp,
-        area_ratio_contraction=area_ratio_contraction,
-        wall_args=wall_args)
+
+
+    def x(T):
+        wall_args['T_wall_bottom'] = T # [K] Add the bottom wall temperature in the wall argument dictionary
+        # Calculate heat transfer to determine channel length
+        res = oneD.rectangular_multi_channel_homogenous_calculation(\
+            channel_amount=channel_amount,
+            prepared_values=prepared_values,
+            Nusselt_relations=Nusselt_relations,
+            pressure_drop_relations=pressure_drop_relations,
+            w_channel=w_channel,
+            h_channel=h_channel,
+            m_dot=m_dot,
+            T_wall=T_wall,
+            p_inlet=p_ref,
+            fp=fp,
+            area_ratio_contraction=area_ratio_contraction,
+            wall_args=wall_args)
+        
+        #print(res['Q_total_bottom_plane_heat_balance'])
+        return res['Q_total_bottom_plane_heat_balance']
+
+    ## ROOT FINDING PROBLEM FOR T_WALL_BOTTOM
+    # The proper bounds for the optimization are very sensitive to wall temperature and chamber temperature
+    # It is hard to pick bounds that are valid for a wide range of those parameters
+    # The problem is that that a too low lower bound results in model results that are wholly invalid and break the optimization
+    # Too high a lower bound results in the solution not being within the bounds at all.
+    # The quick and dirty solution here is to stepwise move the bounds down until the valid solution is between it.
+    # The stepsize must be small enough to reliably avoid the scenario where the calculations are completely incorrect.
+    delta_T_bounds = 20 # [K] The size of the bound shift could determine how low the bounds can go to the final chamber temperature without resulting into incorrection calculations
+   
+    ## The resultant channel length, pressure drops, etc, depends on bottom wall temperature. It must be iterated towards here.
+    T_wall_bottom_min = T_wall-delta_T_bounds# [K] Minimum temperature is in practice probably not lower than chamber temperature (not impossible, though)
+    T_wall_bottom_max = T_wall
+    bounds_are_correct = False # [bool] Is False until a solution has been found
+    # The bounds are correct once they get the opposite sign
+    while not bounds_are_correct:
+        a = x(T_wall_bottom_max) 
+        b = x(T_wall_bottom_min)
+        # If the solutions have the same sign, subtract delta_T_bounds
+        if np.sign(a) == np.sign(b):
+            T_wall_bottom_min -= delta_T_bounds
+            T_wall_bottom_max -= delta_T_bounds
+        else:
+            bounds_are_correct = True
+
+    root_result = root_scalar(x, bracket=([T_wall_bottom_min,T_wall_bottom_max]))
+            
+        
+
+    if root_result.converged:
+        T_wall_bottom = root_result.root # [m^2]
+        wall_args['T_wall_bottom'] = T_wall_bottom
+        #print(" T_wall_bottom: {:3.2f} K".format(T_wall_bottom))
+    else:
+        raise Exception("No solution found for given temperature")
     
+    res = oneD.rectangular_multi_channel_homogenous_calculation(\
+            channel_amount=channel_amount,
+            prepared_values=prepared_values,
+            Nusselt_relations=Nusselt_relations,
+            pressure_drop_relations=pressure_drop_relations,
+            w_channel=w_channel,
+            h_channel=h_channel,
+            m_dot=m_dot,
+            T_wall=T_wall,
+            p_inlet=p_ref,
+            fp=fp,
+            area_ratio_contraction=area_ratio_contraction,
+            wall_args=wall_args)
+
+    # Check if these solutions are eventually valid
+    assert(np.all(res['res_l']['delta_L']>=0))
+    assert(np.all(res['res_tp']['delta_L']>=0))
+    assert(np.all(res['res_g']['delta_L']>=0))
+        
     l_channel = res['L_total'] # [m] Channel length
     p_chamber = res['p_chamber'] # [Pa] Pressure out channel outlet/inlet of nozzle according to IRT
     T_chamber = res['T_chamber']
@@ -350,7 +414,7 @@ if __name__ == "__main__":
 
     # Go through several channel widths to plot
 
-    w_channel = (10e-6, 25e-6, 50e-6, 75e-6, 100e-6, 200e-6)
+    w_channel = (25e-6,27.5e-6,30e-6,35e-6,40e-6,500e-6) #(10e-6, 25e-6, 50e-6, 75e-6, 100e-6, 200e-6)
 
     # Create and figures and axes to plot on
     fig_P_loss = plt.figure()

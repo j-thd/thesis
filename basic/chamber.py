@@ -75,21 +75,8 @@ def radiation_loss(T, A, emmisivity):
     Returns:
         [type] -- [description]
     """
-    #print(type(T))
+
     T = float(T)
-    #print(type(T))
-    #print("Temperature**4: {} ".format(T**4))
-    #print(type(A))
-    #A = float(A)
-    #print("Area: {}".format(A))
-    #print(type(A))
-    #print(type(emmisivity))
-    emmisivity = float(emmisivity)
-    #print(type(emmisivity))
-    #print(type(stefan_boltzmann))
-    #P_rad = emmisivity * A * stefan_boltzmann * T**4
-    #print("P_rad: {}".format(P_rad))
-    #print(type(P_rad))
     return emmisivity * A * stefan_boltzmann * T**4
 
 def radiation_loss_numpy(T_np_array, A, emmisivity):
@@ -228,9 +215,9 @@ def required_power(m_dot, delta_h):
     return m_dot * delta_h # [W] Required power (Power is positive if heat flows from T_wall to T_ref)
 
 def required_heater_area(Q_dot, h_conv, T_wall, T_ref):
-
-    #assert(Q_dot > 0) # Check if Q_dot is positive as per convention
-    #assert(T_wall > T_ref)
+    #print(Q_dot)
+    assert(np.all(Q_dot >= 0)) # Check if Q_dot is positive as per convention
+    assert(np.all(T_wall > T_ref))
 
     return Q_dot/(h_conv * (T_wall - T_ref)) # [m^2] Required heater area 
 
