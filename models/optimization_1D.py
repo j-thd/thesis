@@ -12,6 +12,7 @@ import basic.chamber as chamber
 from thermo.prop import FluidProperties
 from basic.IRT import engine_performance_from_F_and_T
 import models.one_D as oneD
+from models.one_D import BottomWallTemperatureTooLowError 
 
 def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_factor, inlet_manifold_width_factor, l_exit_manifold, w_channel_spacing, w_outer_margin, T_wall, p_ref, m_dot, \
     prepared_values, Nusselt_relations, pressure_drop_relations, convergent_half_angle, divergent_half_angle, F_desired, p_back, AR_exit, emissivity_top, fp: FluidProperties, wall_args=None):
@@ -55,20 +56,33 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
     # Too high a lower bound results in the solution not being within the bounds at all.
     # The quick and dirty solution here is to stepwise move the bounds down until the valid solution is between it.
     # The stepsize must be small enough to reliably avoid the scenario where the calculations are completely incorrect.
-    delta_T_bounds = 20 # [K] The size of the bound shift could determine how low the bounds can go to the final chamber temperature without resulting into incorrection calculations
+    delta_T_bounds = (T_wall+prepared_values['p_l']['T'][0])/2 # [K] The step size is half the top wall temperature and the inlet temperature initially
    
     ## The resultant channel length, pressure drops, etc, depends on bottom wall temperature. It must be iterated towards here.
     T_wall_bottom_min = T_wall-delta_T_bounds# [K] Minimum temperature is in practice probably not lower than chamber temperature (not impossible, though)
     T_wall_bottom_max = T_wall
     bounds_are_correct = False # [bool] Is False until a solution has been found
+    # Setting the proper bounds is already hard, and here, bifurcation will be used.
     # The bounds are correct once they get the opposite sign
+    ## NOTE: this while statement is a bit too complex and improper, but was a late and necessary fix to the code
     while not bounds_are_correct:
-        a = x(T_wall_bottom_max) 
-        b = x(T_wall_bottom_min)
-        # If the solutions have the same sign, subtract delta_T_bounds
+        # If one of the temperatures is too low, then the bounds must be raised.
+        try:
+            a = x(T_wall_bottom_max) 
+            b = x(T_wall_bottom_min)
+        except BottomWallTemperatureTooLowError:
+            # This means the lower bound b is too low. It is raised by half the previous step size
+            delta_T_bounds = delta_T_bounds / 2
+            T_wall_bottom_min += delta_T_bounds
+            continue # The loop must be aborted if this error was raised.
+        
+        # If the solutions have the same sign:
         if np.sign(a) == np.sign(b):
-            T_wall_bottom_min -= delta_T_bounds
-            T_wall_bottom_max -= delta_T_bounds
+            T_wall_bottom_max = T_wall_bottom_min # Maker the upper bound the previous lower bound.
+            # Half the interval again by halving the delta T
+            delta_T_bounds = delta_T_bounds / 2
+            T_wall_bottom_min -= delta_T_bounds 
+            
         else:
             bounds_are_correct = True
 
@@ -120,6 +134,7 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
             'l_total': np.nan, # [m] Total chip length
             'is_channel_choked': np.nan,
             'Re_channel_exit': np.nan, # [-] Reynolds number at channel exit
+            'pressure_drop_punishment': 0-p_chamber# [-] This factor is used to help avoid the optimization converging at invalid solutions with a constant punishment factor
     }
     # This only runs if pressure drop was not too large.
     # In that case the throat area must be recalculated still

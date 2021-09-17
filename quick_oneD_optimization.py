@@ -89,10 +89,10 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
 
         # Wall effects
         kappa_wall = 100 # [W/(m*K)]Thermal conductivity of the silicon walls
-        T_wall_bottom = T_chamber
+        #T_wall_bottom = T_chamber
         wall_args = {
             'kappa_wall': kappa_wall,
-            'T_wall_bottom': T_wall_bottom,
+        #    'T_wall_bottom': T_wall_bottom,
             'h_channel': h_channel,
             'w_channel': w_channel,
             'w_channel_spacing': w_channel_spacing,

@@ -728,7 +728,9 @@ def calc_wall_effect_parameters(h_conv, w_channel_spacing, kappa_wall, h_channel
     T_wall_effective = ( ( T_wall_top + T_wall_bottom)*w_channel + 2*T_wall_side_effective*h_channel) / \
         ( 2 * (w_channel + h_channel) ) # [K] Effective wall temperature, temperatures weighted by relative perimeter
 
-    assert np.all(T_wall_effective > T_fluid)
+    # If the effective wall temperature is too low, the entire calculation becomes garbage and the solution is invalid anyway
+    if not np.all(T_wall_effective > T_fluid):
+        raise BottomWallTemperatureTooLowError
     
 
     return {
@@ -777,4 +779,9 @@ def calc_bottom_plane_heat_balance(h_conv, T_fluid, we, wall_args, delta_L):
     # print("Q_radiation_total: {:3.1f} W".format(Q_radiation_total))
 
 
-    return Q_conduction_total - Q_convection_total - Q_radiation_total # [W] Heat difference that must be compensated by radiation loss for the solution to be valid
+    return (Q_conduction_total - Q_convection_total - Q_radiation_total) # [W] Heat difference that must be compensated by radiation loss for the solution to be valid
+
+# This a very specific exception raised for the bottom wall temperature iteration. It is specific to avoid catching other exceptions that are unrelated.
+# It is necessary to easily speed up the bottom wall temperature iteration, which has quite some problems with correctly determnining the bottom wall temperature.
+class BottomWallTemperatureTooLowError(Exception):
+    print("Bottom wall temperature is too low for valid calculations. True solutions likely exist at higher temperature.")

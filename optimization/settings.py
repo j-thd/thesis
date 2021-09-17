@@ -1,6 +1,7 @@
 """This file contains the settings for various optimization tasks
     """
 
+import math
 from thermo.prop import FluidProperties
 import thermo.convection
 import thermo.two_phase as tp
@@ -24,7 +25,7 @@ settings_1D_rectangular_multichannel['FDP'] = {
     'l_exit_manifold' : 0,                          # [m] Length between the end of multiple channels and start of convergent nozzle
     'convergent_half_angle'  : math.radians(45),    # [rad] Half-angle of the convergent part of the nozzle
     'divergent_half_angle' : math.radians(22.5),    # [rad] Half-angle of divergent part of the nozzle
-    'w_outer_margin' : 2e-3,                        # [m] Margin around the outer channels for structural integrity
+    'w_outer_margin' : 0e-3,                        # [m] Margin around the outer channels for structural integrity
     'emissivity_chip_top' : 0.5,                    # [-] Emissivity of chip at top-side
     'emissivity_chip_bottom' : 0.5,                 # [-] Emissivity of chip at bottom-side
     'kappa_wall': 100,                              # [W/(m*K)] Thermal conductivty of chip/wall in general
