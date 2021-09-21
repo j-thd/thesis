@@ -129,7 +129,7 @@ def calc_and_plot_channel_width(w_channel, ax_P_loss, fig_P_loss, ax_w_total, fi
     prepared_values = oneD.full_homogenous_preparation(
         T_inlet=T_inlet,
         T_outlet=T_chamber, # Outlet of the channel is equal to chamber temperature in IRT
-        m_dot=m_dot,
+        m_dot=m_dot/channel_amount,
         p_ref=p_inlet, # The pressure in the channel is assumed to be constant
         steps_l=steps_l,
         steps_tp=steps_tp,

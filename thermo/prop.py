@@ -430,3 +430,19 @@ class FluidProperties:
         """
 
         return PropsSI("PCRIT", self.fluid) # [Pa] Critical pressure
+
+    def get_Mach_number(self, T, p, u):
+        """Returns the Mach number by dividing provided velocity with speed of sound
+
+        Args:
+            T (K): Temperature
+            p (Pa): Pressure
+            u (m/s): Velocity
+
+        Returns:
+            M (-): Mach number
+        """
+
+        speed_of_sound = PropsSI("speed_of_sound", 'T', T, 'P', p, self.fluid)
+
+        return u/speed_of_sound # [-] Return the mach number based on given velocity u

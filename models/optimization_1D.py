@@ -156,7 +156,13 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
         is_channel_choked = (w_channel*h_channel*channel_amount < ep['A_throat']) # [bool] If combined channel area is smaller than throat, they are choked.
         # Check new Reynolds number at channel exit for laminar/turbulent flow assumptions
         hydraulic_diameter = chamber.hydraulic_diameter_rectangular(w_channel=w_channel,h_channel=h_channel)
-        Re_channel_exit = fp.get_Reynolds_from_mass_flow(T=T_chamber, p=p_chamber,L_ref=hydraulic_diameter, m_dot=m_dot, A=h_channel*w_channel)
+        A_channel = h_channel*w_channel # [m^2] Cross-sectional area of channel
+        Re_channel_l = res['res_l']['Re'][0] 
+        Re_channel_tp = res['res_tp']['Re'][0]
+        Re_channel_g = res['res_g']['Re'][0]
+        M_channel_exit_after_dP = fp.get_Mach_number(T=T_chamber, p=p_chamber, u=res['res_g']['u'][-1])
+
+        Re_channel_exit_after_dP = fp.get_Reynolds_from_mass_flow(T=T_chamber, p=p_chamber,L_ref=hydraulic_diameter, m_dot=m_dot, A=A_channel)
 
         l_outlet = chamber.outlet_length(\
             w_channel=w_channel,
@@ -190,5 +196,10 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
                 'w_total': w_total, # [m] Total chip width
                 'l_total': l_total, # [m] Total chip length
                 'is_channel_choked': is_channel_choked, # [bool] 0 and 1 in this case, to check if channels are not too small
-                'Re_channel_exit': Re_channel_exit, # [-] Check Reynolds number to see if laminar flow assumptions still hold 
+                'Re_channel_exit_after_dP': Re_channel_exit_after_dP, # [-] Check Reynolds number to see if laminar flow assumptions still hold
+                'M_channel_exit_after_dP': M_channel_exit_after_dP, # [-] Check Mach number to see if it is a problem
+                'Re_channel_l': Re_channel_l,
+                'Re_channel_tp': Re_channel_tp,
+                'Re_channel_g': Re_channel_g,
+                'T_wall_bottom': T_wall_bottom, # [K] Bottom wall temperature 
         }

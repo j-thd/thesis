@@ -784,4 +784,4 @@ def calc_bottom_plane_heat_balance(h_conv, T_fluid, we, wall_args, delta_L):
 # This a very specific exception raised for the bottom wall temperature iteration. It is specific to avoid catching other exceptions that are unrelated.
 # It is necessary to easily speed up the bottom wall temperature iteration, which has quite some problems with correctly determnining the bottom wall temperature.
 class BottomWallTemperatureTooLowError(Exception):
-    print("Bottom wall temperature is too low for valid calculations. True solutions likely exist at higher temperature.")
+    pass

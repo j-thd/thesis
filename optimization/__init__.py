@@ -6,7 +6,7 @@ from basic import IRT
 from basic import chamber
 from models.optimization_1D import optim_P_total
 from models import one_D as oneD
-from scipy.optimize import minimize, Bounds
+from scipy.optimize import minimize, Bounds, fmin_l_bfgs_b
 
 def run(F_desired,T_chamber, channel_amount, settings, x_guess):
     """ Algorithm to determine the thruster with the best specific impulse for the given thrust and power requirements
@@ -70,7 +70,7 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
     prepared_values = oneD.full_homogenous_preparation(
         T_inlet=T_inlet,                            # [K] Inlet temperature of the channel
         T_outlet=T_chamber,                         # [K] Outlet of the channel is equal to chamber temperature in IRT
-        m_dot=m_dot,                                # [kg/s] Mass flow
+        m_dot=m_dot/channel_amount,                 # [kg/s] Mass flow in a single channel
         p_ref=p_inlet,                              # [Pa] The pressure in the channel is assumed to be constant for heat flow calculation purposes
         steps_l=settings['steps']['steps_l'],       # [-] Fidelity of simulation in liquid section of channel
         steps_tp=settings['steps']['steps_tp'],     # [-] Fidelity of simulation in two-phase section of channel
@@ -103,7 +103,7 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
     else:
         x0 = x_guess
     # The function to optimize
-    def f(x): #  NOTE: change bounds above if argument change
+    def f(x, return_full_results=False): #  NOTE: change bounds above if argument change
         w_channel = x[0]
         w_channel_spacing = x[1]
         T_wall = x[2]
@@ -141,40 +141,62 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
             AR_exit=AR_exit,                                                                # [-] Exit area ratio to correct nozzle after pressure drop
             emissivity_top=settings['FDP']['emissivity_chip_top'],                               # [-] Emissivity of top chip (black-body-radiation)
             fp=fp,                                                                          # [object] Object to access thermodynamic parameters of propellant with
-            wall_args=wall_args                                                             # {dict} Arguments about wall design. See above
+            wall_args=wall_args,                                                            # {dict} Arguments about wall design. See aboves                          
         )
         # Return the total power consumption. The variable of interest
         P_total = P_ideal + res_P['P_loss']
         #print(x)
-        
-        # Rescaling
-        factor = 1e6
 
         if math.isnan(P_total):
             #print("A constraint violated.")
             # Punish the objective function by outputting high power consumptions for invalid solutions
             # The punishment must however not be constant, or it will converge at the boundary where it is invalid.
             # Since the punishment stems from the pressure drop being higher than the initial p_chamber value, the lower the negative final pressure is the higher the punishment
-            return (P_ideal*(2+1*res_P['pressure_drop_punishment']))*factor
+            return (P_ideal*(2+1*res_P['pressure_drop_punishment']))
         else:
             #print("P_total: {:2.5f} W".format(P_total))
-            return P_total*factor
+            # Scipy minimize can't handle multiple returns for the objective function, so the extensive final results must be pulled out afterwards
+            if return_full_results:
+                print(res_P)
+                return res_P
+            else:
+                return P_total
 
     ## OPTIMIZATION ALGORITHM
     # First bounds must be set in the same order that arguments are given in f()
     # The order is: channel_amount, w_channel,w_channel_spacing,T_wall
+    optimization_method = 'L-BFGS-B'
+    optimization_options = {
+        'ftol': 2.220446049250313e-20
+    }
+
     minimize_results = minimize(
         fun=f,
         x0=x0,
-        bounds=b
+        bounds=b,
+        method=optimization_method,
+        options=optimization_options
         )
+
+    # 
+
+    res_final = f(minimize_results.x, return_full_results=True)
 
     optim_results = {
         'minimize_results': minimize_results,
         'w_channel': minimize_results.x[0],
         'w_channel_spacing': minimize_results.x[1],
         'T_wall_top': minimize_results.x[2],
-        'P_total': minimize_results.fun/1e6,
+        'P_total': minimize_results.fun,
+        'l_channel': res_final['l_channel'],
+        'T_wall_bottom': res_final['T_wall_bottom'],
+        'w_total': res_final['w_total'],
+        'pressure_drop': res_final['pressure_drop'],
+        'Re_channel_l': res_final['Re_channel_l'],
+        'Re_channel_tp': res_final['Re_channel_tp'],
+        'Re_channel_g': res_final['Re_channel_g'],
+        'M_channel_exit_after_dP': res_final['M_channel_exit_after_dP'],
+        'Re_channel_exit_after_dP': res_final['Re_channel_exit_after_dP'],
     }
     print(optim_results)
     return optim_results
