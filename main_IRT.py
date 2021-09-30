@@ -9,11 +9,11 @@ td = thrusters.thruster_data.Cen2010_6
 
 # Design paramaters
 fp = FluidProperties(td['propellant']) # Object to access fluid properties with
-p_c = td['p_inlet'] # [bar] Chamber pressure
-T_c = td['T_chamber_guess'] # [K] Chamber temperature
+p_c = 5e5#td['p_inlet'] # [bar] Chamber pressure
+T_c = 1000#td['T_chamber_guess'] # [K] Chamber temperature
 h_channel = td['h_channel'] # [m] Channel/nozzle depth
 w_throat = td['w_throat'] # [m] Throat width
-AR_exit = td['AR_exit'] # [-] Exit area ratio
+AR_exit = 10 #td['AR_exit'] # [-] Exit area ratio
 p_back = td['p_back'] # [Pa] Atmospheric pressire
 
 print("Chamber temperature: {:3.2f} K".format(T_c))

@@ -152,6 +152,8 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
 
         # New throat widtl_inlet_manifoldmined from desired performance parameter
         w_throat_new = ep['A_throat']/h_channel # [m]
+        D_hydraulic_throat_new = chamber.hydraulic_diameter_rectangular(w_channel=w_throat_new, h_channel=h_channel) # [m] Hydraulic diameter of new throat dimensions
+        Re_throat_new = fp.get_Reynolds_from_mass_flow(T=T_chamber, p=p_chamber, L_ref=D_hydraulic_throat_new, m_dot=m_dot, A=ep['A_throat'])
         # Check if new pressure, does not cause choked heating channels
         is_channel_choked = (w_channel*h_channel*channel_amount < ep['A_throat']) # [bool] If combined channel area is smaller than throat, they are choked.
         # Check new Reynolds number at channel exit for laminar/turbulent flow assumptions
@@ -162,7 +164,7 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
         Re_channel_g = res['res_g']['Re'][0]
         M_channel_exit_after_dP = fp.get_Mach_number(T=T_chamber, p=p_chamber, u=res['res_g']['u'][-1])
 
-        Re_channel_exit_after_dP = fp.get_Reynolds_from_mass_flow(T=T_chamber, p=p_chamber,L_ref=hydraulic_diameter, m_dot=m_dot, A=A_channel)
+        Re_channel_exit_after_dP = fp.get_Reynolds_from_mass_flow(T=T_chamber, p=p_chamber,L_ref=hydraulic_diameter, m_dot=m_dot/channel_amount, A=A_channel)
 
         l_outlet = chamber.outlet_length(\
             w_channel=w_channel,
@@ -201,5 +203,7 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
                 'Re_channel_l': Re_channel_l,
                 'Re_channel_tp': Re_channel_tp,
                 'Re_channel_g': Re_channel_g,
-                'T_wall_bottom': T_wall_bottom, # [K] Bottom wall temperature 
+                'T_wall_bottom': T_wall_bottom, # [K] Bottom wall temperature
+                'w_throat_new': w_throat_new,
+                'Re_throat_new': Re_throat_new, # [-] Reynolds number of throat after scaling for pressure loss 
         }

@@ -25,15 +25,15 @@ settings_1D_rectangular_multichannel['FDP'] = {
     'l_exit_manifold' : 0,                          # [m] Length between the end of multiple channels and start of convergent nozzle
     'convergent_half_angle'  : math.radians(45),    # [rad] Half-angle of the convergent part of the nozzle
     'divergent_half_angle' : math.radians(22.5),    # [rad] Half-angle of divergent part of the nozzle
-    'w_outer_margin' : 2e-3,                        # [m] Margin around the outer channels for structural integrity
-    'emissivity_chip_top' : 0.5,                    # [-] Emissivity of chip at top-side
-    'emissivity_chip_bottom' : 0.5,                 # [-] Emissivity of chip at bottom-side
-    'kappa_wall': 100,                              # [W/(m*K)] Thermal conductivty of chip/wall in general
+    'w_outer_margin' : 0.5e-3,                        # [m] Margin around the outer channels for structural integrity
+    'emissivity_chip_top' : 0.7,                    # [-] Emissivity of chip at top-side
+    'emissivity_chip_bottom' : 0.7,                 # [-] Emissivity of chip at bottom-side
+    'kappa_wall': 50,                              # [W/(m*K)] Thermal conductivty of chip/wall in general
 
 }
 ## BOUNDARIES ON DESIGN SPACE
 settings_1D_rectangular_multichannel['bounds'] = {
-    'w_channel_spacing': (1e-6,20e-6),
+    'w_channel_spacing': (10e-6,50e-6),
     'channel_amount': (1,25),
     'w_channel': (10e-6, 1e-3),
     'T_wall_superheat': (20, 500),           # [K] Wall temperature range (T_wall = T_chamber + T_wall_superheat)
@@ -54,9 +54,11 @@ settings_1D_rectangular_multichannel['pressure_drop_relations'] = {
         'contraction': oneD.calc_single_phase_contraction_pressure_drop_Kawahara2015
     }
 ## SIMULATION SETTINGS
-steps_per_section = 100 # [-] Amount of subdivisions in the channel
+steps_per_section = 1000 # [-] Amount of subdivisions in the channel
 settings_1D_rectangular_multichannel['steps'] = {
     'steps_l' : steps_per_section, # [-] Liquid section
     'steps_tp' : steps_per_section, # [-] Two-phase section
     'steps_g' : steps_per_section, # [-] Gas section
 }
+
+settings_1D_rectangular_multichannel['function_scaling'] = 1e10 # [-] Amount of scaling of optimization function 
