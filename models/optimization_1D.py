@@ -193,10 +193,17 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
         P_loss = P_rad_loss_top + P_rad_loss_bottom # [W] Total heat loss
         return {'P_loss': P_loss, # [W] Current approximation of heat loss
                 'l_channel': l_channel, # [m] Channel length
+                'l_channel_l': res['res_l']['L'][-1], # [m] Section length (liquid phase)
+                'l_channel_tp': res['res_tp']['L'][-1], # [m] Channel length
+                'l_channel_g': res['res_g']['L'][-1], # [m] Channel length
                 'pressure_drop': res['dP_total'], # [Pa] Total pressure drop
                 'dP_contraction': res['dP_contraction'], # [Pa] Pressure drop due to contraction
                 'w_total': w_total, # [m] Total chip width
+                'w_nozzle': w_throat_new*AR_exit, # [m] Total chip width
+                'w_inlet': w_inlet_manifold, # [m] Total chip width
                 'l_total': l_total, # [m] Total chip length
+                'l_inlet': l_inlet_manifold, # [m] Total chip length
+                'l_outlet': l_outlet, # [m] Total chip length
                 'is_channel_choked': is_channel_choked, # [bool] 0 and 1 in this case, to check if channels are not too small
                 'Re_channel_exit_after_dP': Re_channel_exit_after_dP, # [-] Check Reynolds number to see if laminar flow assumptions still hold
                 'M_channel_exit_after_dP': M_channel_exit_after_dP, # [-] Check Mach number to see if it is a problem

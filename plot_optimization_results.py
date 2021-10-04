@@ -5,14 +5,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import optimization
+import optimization.settings
 from basic import IRT
 from basic import chamber
 from models.optimization_1D import optim_P_total
 from models import one_D as oneD
+from thermo.prop import FluidProperties
 
 def run():
     F_desired = 4e-3 # [mN] Thrust
-    T_chamber = 1000 # [K] Chamber temperature
+    T_chamber = 600 # [K] Chamber temperature
     file_name = "optimization_results/optimization_results-F{:1.0f}mN-{}K.npz".format(F_desired*1e3,T_chamber)
     optimization_settings = optimization.settings.settings_1D_rectangular_multichannel # For the analysis of the answer
 
@@ -40,11 +42,35 @@ def run():
     w_channel_spacing_min = data['w_channel_spacing'][id]
     T_wall_top_min = data['T_wall'][id]
     print('\n----- BEST RESULT:')
-    print("Power consumption:       {:2.3f} W".format(P_min))
-    print("Amount of channels:      {:2.0f}".format(channel_min))
-    print("Channel width:           {:3.4f} micron".format(w_channel_min*1e6) )
-    print("Channel spacing:         {:3.4f} micron".format(w_channel_spacing_min*1e6) )
-    print("Top wall temperature:    {:3.4f} K".format(T_wall_top_min))
+    print(" Power consumption:       {:2.3f} W".format(P_min))
+    print(" Amount of channels:      {:2.0f}".format(channel_min))
+    print(" Channel width:           {:3.4f} micron".format(w_channel_min*1e6) )
+    print(" Channel spacing:         {:3.4f} micron".format(w_channel_spacing_min*1e6) )
+    print(" Top wall temperature:    {:3.4f} K".format(T_wall_top_min))
+
+    # Determine parameters at best result
+    Re_l_min = data['Re_channel_l'][id]
+    Re_tp_min = data['Re_channel_tp'][id]
+    Re_g_min = data['Re_channel_g'][id]
+    Re_throat_min = data['Re_throat_new'][id]
+
+    l_total_min = data['l_total'][id]
+    l_channel_l_min = data['l_channel_l'][id]
+    l_channel_tp_min = data['l_channel_tp'][id]
+    l_channel_g_min = data['l_channel_g'][id]
+
+    print("\n---- PARAMETERS AT BEST RESULT:")
+    print(" - Reynolds:")
+    print("  * Liquid:    {:3.1f}".format(Re_l_min))
+    print("  * Two-phase: {:3.1f}".format(Re_tp_min))
+    print("  * Gas:       {:3.1f}".format(Re_g_min))
+    print("  * Throat:    {:3.1f}".format(Re_throat_min))
+    print(" - Channel section length:")
+    print("  * Liquid:    {:3.1f} micron".format(l_channel_l_min*1e6))
+    print("  * Two-phase: {:3.1f} micron".format(l_channel_tp_min*1e6))
+    print("  * Gas:       {:3.1f} micron".format(l_channel_g_min*1e6))
+    
+
 
     # Analyze best result for sensitivity.
 
@@ -66,7 +92,7 @@ def run():
     ub = data['channel_amount_range'][ub_id]
     print("Higher bound optimum: {} channels".format(ub))
 
-    str_title = "({:1.1f} mN, {:2.2} mg/s, $p_{{in}}=${:1.0f} bar, $T_c=${:3.0f} K)".format(F_desired*1e3, m_dot*1e6, p_inlet*1e-5, T_chamber)
+    str_title = "({:1.1f} mN, $p_{{in}}=${:1.0f} bar, $T_c=${:3.0f} K)".format(F_desired*1e3, p_inlet*1e-5, T_chamber)
     optimum_bounds = {
         'min': channel_min,
         'lb': lb,
@@ -80,109 +106,207 @@ def run():
         Re_throat=data['Re_throat_new'],
         str_title=str_title,
         optimum_bounds=optimum_bounds,
+        sens=sensitivity
     )
 
-    plotOptimumOutcome(
-        channel_amount=data['channel_amount_range'],
-        P_loss=data['P_loss'],
-        w_channel=data['w_channel'],
-        w_channel_spacing=data['w_channel_spacing'],
-        T_wall=data['T_wall'],
-        str_title=str_title,
-        optimum_bounds=optimum_bounds)
+    # plotOptimumOutcome(
+    #     channel_amount=data['channel_amount_range'],
+    #     P_loss=data['P_loss'],
+    #     w_channel=data['w_channel'],
+    #     w_channel_spacing=data['w_channel_spacing'],
+    #     T_wall=data['T_wall'],
+    #     str_title=str_title,
+    #     optimum_bounds=optimum_bounds)
 
     plotChannelCharacteristics(
         channel_amount=data['channel_amount_range'],
         pressure_drop=data['pressure_drop'],
-        l_channel=data['l_channel'],
+        l_channel=data['l_total'],
         w_throat_new=data['w_throat_new'],
         w_total=data['w_total'],
         str_title=str_title,
-        optimum_bounds=optimum_bounds
+        optimum_bounds=optimum_bounds,
+        sens=sensitivity
     )
+
+    plotPressureDropVsThroatReynolds(pressure_drop=data['pressure_drop'], Re_throat=data['Re_throat_new'], str_title=str_title, optimum_bounds=optimum_bounds, sens=sensitivity)
+
+    #analyze_best_result(id=id,data=data,settings=optimization_settings)
+
+    #monte_carlo_guess(id=id, data=data,settings=optimization_settings)
 
     plt.show()
 
-def plotChannelCharacteristics(channel_amount, pressure_drop, l_channel, w_throat_new, w_total, str_title, optimum_bounds):
+def plotChannelCharacteristics(channel_amount, pressure_drop, l_channel, w_throat_new, w_total, str_title, optimum_bounds, sens):
     fig, axs = plt.subplots(2,2)
     # Total power consumption
     axs[0][0].plot(channel_amount, pressure_drop*1e-5)
     axs[0][0].set_ylabel("$\Delta P$ [bar]")
     axs[0][0].grid()
-    plotOptimumBounds(optimum_bounds,axs=axs[0][0],labels=True)
+    plotOptimumBounds(optimum_bounds,sens,axs=axs[0][0],labels=True)
     axs[0][1].plot(channel_amount, l_channel*1e3)
     axs[0][1].set_ylabel("$l_c$ [mm]")
     axs[0][1].grid()
-    plotOptimumBounds(optimum_bounds,axs=axs[0][1])
+    plotOptimumBounds(optimum_bounds,sens,axs=axs[0][1])
     axs[1][0].plot(channel_amount, w_throat_new*1e6)
     axs[1][0].set_ylabel("$w_t$ [$\\mu$m]")
     axs[1][0].grid()
-    plotOptimumBounds(optimum_bounds,axs=axs[1][0])
+    plotOptimumBounds(optimum_bounds,sens,axs=axs[1][0])
     axs[1][1].plot(channel_amount, w_total*1e3)
     axs[1][1].set_ylabel("$w_{{chip}}}$ [mm]")
     axs[1][1].grid()
-    plotOptimumBounds(optimum_bounds,axs=axs[1][1])
+    plotOptimumBounds(optimum_bounds,sens, axs=axs[1][1])
     fig.suptitle("Geometry "+str_title)
     axs[0][0].legend()
     plt.tight_layout(pad=0.5)
 
-def plotOptimumOutcome(channel_amount, P_loss, w_channel, w_channel_spacing, T_wall, str_title, optimum_bounds):
+def plotOptimumOutcome(channel_amount, P_loss, w_channel, w_channel_spacing, T_wall, str_title, optimum_bounds, sens):
     fig, axs = plt.subplots(2,2)
     # Total power consumption
     axs[0][0].plot(channel_amount, P_loss)
     axs[0][0].set_ylabel("$P_{{loss}}$ [W]")
     axs[0][0].grid()
-    plotOptimumBounds(optimum_bounds,axs=axs[0][0],labels=True)
+    plotOptimumBounds(optimum_bounds,sens,axs=axs[0][0],labels=True)
     # Channel width
     axs[0][1].plot(channel_amount, w_channel*1e6)
     axs[0][1].set_ylabel("$w_c$ [$\\mu$m]")
     axs[0][1].grid()
-    plotOptimumBounds(optimum_bounds,axs=axs[0][1])
+    plotOptimumBounds(optimum_bounds,sens,axs=axs[0][1])
     # Channel width spacing
     axs[1][0].plot(channel_amount, w_channel_spacing*1e6)
     axs[1][0].set_ylabel("$s_c$ [$\\mu$m]")
     axs[1][0].grid()
-    plotOptimumBounds(optimum_bounds,axs=axs[1][0])
+    plotOptimumBounds(optimum_bounds,sens,axs=axs[1][0])
     # Top wall temperature
     axs[1][1].plot(channel_amount, T_wall)
     axs[1][1].set_ylabel("$T_{{wall}}$ [K]")
     axs[1][1].grid()
-    plotOptimumBounds(optimum_bounds,axs=axs[1][1])
+    plotOptimumBounds(optimum_bounds,sens,axs=axs[1][1])
     fig.suptitle("Optimum outcome and parameters "+str_title)
     axs[0][0].legend()
     plt.tight_layout(pad=0.5)
 
-def plotReynolds(channel_amount, Re_l, Re_tp, Re_g, Re_throat, str_title, optimum_bounds):
+def plotPressureDropVsThroatReynolds(pressure_drop, Re_throat, str_title, optimum_bounds, sens):
+    sens_label = "+{:1.0f}% loss".format(sens*100)
+    plt.figure()
+
+    plt.plot(pressure_drop*1e-5,Re_throat, label="Throat")
+    plt.axvline(1e-5*pressure_drop[optimum_bounds['min']], label="Optimum", c="red", linestyle="dashed")
+    plt.axvline(1e-5*pressure_drop[optimum_bounds['lb']], label=sens_label, c="red", linestyle="dotted")
+    plt.axvline(1e-5*pressure_drop[optimum_bounds['ub']], label=sens_label,  c="red", linestyle="dotted")
+    plt.xlabel("Pressure drop $\Delta p$ [bar]")
+    plt.ylabel("Throat Reynolds $Re_{{throat,dh}}$ [-]")
+    plt.title("Throat Reynolds vs. pressure drop " + str_title)
+    plt.grid()
+    plt.legend()
+    plt.tight_layout()
+
+    print("\n Throat Reynold's vs. pressure drop info:")
+    Re_lb = Re_throat[optimum_bounds['lb']]
+    Re_min = Re_throat[optimum_bounds['min']]
+    Re_ub = Re_throat[optimum_bounds['ub']]
+    print("Re_lb {:4.0f} ({:2.1f})%".format(Re_lb, (Re_lb-Re_min)/Re_min*100))
+    print("Re_min {:4.0f}".format(Re_min))
+    print("Re_ub {:4.0f} ({:2.1f})%".format(Re_ub, (Re_ub-Re_min)/Re_min*100))
+
+def plotReynolds(channel_amount, Re_l, Re_tp, Re_g, Re_throat, str_title, optimum_bounds, sens):
     plt.figure()
     
     plt.plot(channel_amount, Re_l, label="Liquid")
     plt.plot(channel_amount, Re_tp, label="Two-Phase")
     plt.plot(channel_amount, Re_g, label="Gas")
-    plt.plot(channel_amount, Re_throat, label="Throat")
+    plt.plot(channel_amount, Re_throat, label="Throat",c='black')
     plt.xlabel("Amount of channels $N_c$[-]")
-    plt.ylabel("$Re_{{D_h}}$")
-    plotOptimumBounds(optimum_bounds)
+    plt.ylabel("$Re_{{D,hydraulic}}$ [-]")
+    plotOptimumBounds(optimum_bounds, sens)
     plt.yscale('log')
     plt.grid()
-    plt.title("Reynolds at start of section "+str_title)
+    plt.title("Reynolds at start of section/throat "+str_title)
     plt.legend()
     plt.tight_layout()
 
-def plotOptimumBounds(optimum_bounds, axs = None, labels=False):
+def plotOptimumBounds(optimum_bounds, sens, axs = None, labels=False):
+    sens_label = "+{:1.0f}% loss".format(sens*100)
     if axs is None:
         plt.axvline(optimum_bounds['min'], label='Optimum', color='red', linestyle='dashed')
-        plt.axvline(optimum_bounds['lb'], label='Lower Bound', color='red', linestyle='dotted')
-        plt.axvline(optimum_bounds['ub'], label='Upper Bound', color='red', linestyle='dotted')
+        plt.axvline(optimum_bounds['lb'], label=sens_label, color='red', linestyle='dotted')
+        plt.axvline(optimum_bounds['ub'], label=sens_label, color='red', linestyle='dotted')
     elif labels == True:
         axs.axvline(optimum_bounds['min'], label='Optimum', color='red', linestyle='dashed')
-        axs.axvline(optimum_bounds['lb'], label='Lower Bound', color='red', linestyle='dotted')
-        axs.axvline(optimum_bounds['ub'], label='Upper Bound', color='red', linestyle='dotted')
+        axs.axvline(optimum_bounds['lb'], label=sens_label, color='red', linestyle='dotted')
+        axs.axvline(optimum_bounds['ub'], label=sens_label, color='red', linestyle='dotted')
     else:
         axs.axvline(optimum_bounds['min'], color='red', linestyle='dashed')
         axs.axvline(optimum_bounds['lb'], color='red', linestyle='dotted')
         axs.axvline(optimum_bounds['ub'],  color='red', linestyle='dotted')
 
-def analyze_best_result(id, data, settings, resolution=100):
+def monte_carlo_guess(id, data, settings, attempts=100):
+    """Check iof the outcome of the optimization is dependent on the guess
+
+    Args:
+        id (): [description]
+        data ([type]): [description]
+        settings ([type]): [description]
+        attempts (int, optional): [description]. Defaults to 100.
+    """
+        # Vary the parameters other than channel_amount to see if it is locally an optimum
+    channel_amount = data['channel_amount_range'][id]
+    P_loss_min = data['P_loss'][id]
+    w_channel_min = data['w_channel'][id]
+    w_channel_spacing_min = data['w_channel_spacing'][id]
+    T_wall_min = data['T_wall'][id]
+
+    F_desired = data['F_desired'] # Actually read the fle just to check
+    T_chamber = float(data['T_chamber'])
+
+    # Generate random guesses as x_guess input
+    # For w_channel
+    w_channel_lb = settings['bounds']['w_channel'][0]
+    w_channel_ub = settings['bounds']['w_channel'][1]
+    w_channel_guesses = w_channel_lb + np.random.rand(attempts)*(w_channel_ub-w_channel_lb)
+    # For w_channel_spacing
+    w_channel_spacing_lb = settings['bounds']['w_channel_spacing'][0]
+    w_channel_spacing_ub = settings['bounds']['w_channel_spacing'][1]
+    w_channel_spacing_guesses = w_channel_spacing_lb + np.random.rand(attempts)*(w_channel_spacing_ub-w_channel_spacing_lb)
+    # For T_wall
+    T_wall_lb = settings['bounds']['T_wall_superheat'][0] + T_chamber
+    T_wall_ub = settings['bounds']['T_wall_superheat'][1] + T_chamber
+    T_wall_guesses = T_wall_lb + np.random.rand(attempts)*(T_wall_ub-T_wall_lb)
+
+    x_guess_array = np.vstack((w_channel_guesses,w_channel_spacing_guesses,T_wall_guesses)).transpose()
+    print(x_guess_array)
+    print(x_guess_array[0])
+
+    P_loss = np.zeros(attempts)
+    w_channel = np.zeros_like(P_loss)
+    w_channel_spacing = np.zeros_like(P_loss)
+    T_wall = np.zeros_like(P_loss)
+
+    iter_P = np.nditer(P_loss, flags=['c_index'])
+
+    for iP in iter_P:
+        print("\nRandomized guess: {}".format(iter_P.index))
+        print("x_guess: {}".format(x_guess_array[iter_P.index]))
+        res = optimization.run(
+        F_desired=F_desired,
+        T_chamber=T_chamber,
+        channel_amount=channel_amount,
+        settings=settings,
+        x_guess=x_guess_array[iter_P.index]
+        )
+
+        P_loss[iter_P.index] = res['P_loss']
+        w_channel[iter_P.index] = res['w_channel']
+        w_channel_spacing[iter_P.index] = res['w_channel_spacing']
+        T_wall[iter_P.index] = res['T_wall_top']
+
+
+    print(P_loss)
+    print(w_channel)
+    print(w_channel_spacing)
+    print(T_wall)
+
+def analyze_best_result(id, data, settings, resolution=25):
     """
         Id is the number of the optimum
     """   
@@ -192,6 +316,79 @@ def analyze_best_result(id, data, settings, resolution=100):
     w_channel_min = data['w_channel'][id]
     w_channel_spacing_min = data['w_channel_spacing'][id]
     T_wall_min = data['T_wall'][id]
+
+    F_desired = data['F_desired'] # Actually read the fle just to check
+    T_chamber = float(data['T_chamber'])
+
+    w_channel_range = np.linspace(start=settings['bounds']['w_channel'][0],stop=settings['bounds']['w_channel'][1], num=resolution)
+    w_channel_spacing_range = np.linspace(start=settings['bounds']['w_channel_spacing'][0],stop=settings['bounds']['w_channel_spacing'][1], num=resolution)
+    T_wall_range = np.linspace(start=settings['bounds']['T_wall_superheat'][0]+T_chamber,stop=settings['bounds']['T_wall_superheat'][1]+T_chamber, num=resolution)
+
+    P_loss_channel = np.zeros_like(w_channel_range)
+    P_loss_channel_spacing = np.zeros_like(w_channel_range)
+    P_loss_wall = np.zeros_like(w_channel_range)
+
+    # Calculate the alternative outcomes
+    iter_P = np.nditer(P_loss_channel, flags=['c_index'])
+    for iP in iter_P:
+        # Calculate results for alternative w_channel
+        res_channel = alternative_power_loss(\
+            F_desired=F_desired,
+            T_chamber=T_chamber,
+            channel_amount=channel_amount,
+            settings=settings,
+            w_channel=w_channel_range[iter_P.index],
+            w_channel_spacing=w_channel_spacing_min,
+            T_wall=T_wall_min)
+        # Calculate result for alternative channel spacing
+        res_channel_spacing = alternative_power_loss(\
+            F_desired=F_desired,
+            T_chamber=T_chamber,
+            channel_amount=channel_amount,
+            settings=settings,
+            w_channel=w_channel_min,
+            w_channel_spacing=w_channel_spacing_range[iter_P.index],
+            T_wall=T_wall_min)
+        # Calculate result for alternative T_wall
+        res_wall = alternative_power_loss(\
+            F_desired=F_desired,
+            T_chamber=T_chamber,
+            channel_amount=channel_amount,
+            settings=settings,
+            w_channel=w_channel_min,
+            w_channel_spacing=w_channel_spacing_min,
+            T_wall=T_wall_range[iter_P.index])
+
+        # Store alternative power outcomes
+        P_loss_channel[iter_P.index]=res_channel['P_loss']
+        P_loss_channel_spacing[iter_P.index]=res_channel_spacing['P_loss']
+        P_loss_wall[iter_P.index]=res_wall['P_loss']
+
+    fig, axs = plt.subplots(2,2)
+    # P_loss vs channel amount
+    axs[0][0].plot(data['channel_amount_range'], data['P_loss'])
+    axs[0][0].set_xlabel("Channel amount $N_c$ [-]")
+    axs[0][0].set_ylabel("$P_{{loss}}$ [W]")
+    axs[0][0].axvline(data['channel_amount_range'][id], label='Optimum', color='red', linestyle='dashed')
+    axs[0][0].grid()
+    # P_loss vs w_channel
+    axs[0][1].plot(w_channel_range*1e6, P_loss_channel)
+    axs[0][1].set_xlabel("$w_c$ [$\\mu$m]")
+    axs[0][1].set_ylabel("$P_{{loss}}$ [W]")
+    axs[0][1].axvline(data['w_channel'][id]*1e6, label='Optimum', color='red', linestyle='dashed')
+    axs[0][1].grid()
+    # Total power consumption
+    axs[1][0].plot(w_channel_spacing_range*1e6, P_loss_channel_spacing)
+    axs[1][0].set_xlabel("$s_c$ [$\\mu$m]$")
+    axs[1][0].set_ylabel("$P_{{loss}}$ [W]")
+    axs[1][0].axvline(data['w_channel_spacing'][id]*1e6, label='Optimum', color='red', linestyle='dashed')
+    axs[1][0].grid()
+    # Total power consumption
+    axs[1][1].plot(T_wall_range, P_loss_wall)
+    axs[1][1].set_xlabel("$T_{{wall,top}}$ [K]")
+    axs[1][1].set_ylabel("$P_{{loss}}$ [W]")
+    axs[1][1].axvline(data['T_wall'][id], label='Optimum', color='red', linestyle='dashed')
+    axs[1][1].grid()
 
     
 def alternative_power_loss(F_desired,T_chamber, channel_amount, settings, w_channel, w_channel_spacing, T_wall):
@@ -208,11 +405,13 @@ def alternative_power_loss(F_desired,T_chamber, channel_amount, settings, w_chan
             PDR (dict of functions): Pressure drop relations that are used in various phases in the channel (friction: liquid, two-phase, gas; contraction)
             steps (dict of ints): Fidelity of the temperature-steps in the various sections of the channel
     """
-    print("\n  ----- OPTIMIZING THRUSTER FOR POWER CONSUMPTION -----")
-    print("\n    HIGH-LEVEL INPUTS")
-    print("--- Desired thrust:        {:3.1f} mN".format(F_desired*1e3))
-    print("--- Chamber temperature:   {:4.1f} K".format(T_chamber))
+    # print("\n  ----- OPTIMIZING THRUSTER FOR POWER CONSUMPTION -----")
+    # print("\n    HIGH-LEVEL INPUTS")
+    # print("--- Desired thrust:        {:3.1f} mN".format(F_desired*1e3))
+    # print("--- Chamber temperature:   {:4.1f} K".format(T_chamber))
     
+    T_chamber=float(T_chamber)
+
     ## First determine ideal engine performance, and load settings for that
     T_inlet = settings['FDP']['T_inlet'] # [K] Inlet temperature (at heating channel inlet manifold)
     p_inlet = settings['FDP']['p_inlet'] # [Pa] Chamber pressure assumed equal to inlet pressure
@@ -221,8 +420,8 @@ def alternative_power_loss(F_desired,T_chamber, channel_amount, settings, w_chan
     assert p_back == 0 # Nozzle correction does not work for back pressure
     fp = settings['FDP']['fp'] # [object] FluidProperties object containing thermodynamic parameters for propellant
 
-    print("--- Inlet pressure:          {:2.1f} bar".format(p_inlet*1e-5))
-    print("--- Exit area ratio          {:2.1f}".format(AR_exit))
+    # print("--- Inlet pressure:          {:2.1f} bar".format(p_inlet*1e-5))
+    # print("--- Exit area ratio          {:2.1f}".format(AR_exit))
 
     
 
@@ -244,11 +443,11 @@ def alternative_power_loss(F_desired,T_chamber, channel_amount, settings, w_chan
     P_ideal = chamber.ideal_power_consumption( # [W] Ideal power consumption
         mass_flow=m_dot, T_inlet=T_inlet,p_inlet=p_inlet, T_outlet=T_chamber,p_outlet=p_inlet, fp=fp)
 
-    print("\n    IDEAL PERFORMANCE")
-    print("--- Nozzle status:           {}".format(ep_ideal['nozzle_status']))
-    print("--- Mass flow:               {:3.2f} mg/s".format(m_dot*1e6))
-    print("--- Isp:                     {:3.1f} s".format(Isp))
-    print("--- Power consumption:       {:2.1f} W".format(P_ideal))
+    # print("\n    IDEAL PERFORMANCE")
+    # print("--- Nozzle status:           {}".format(ep_ideal['nozzle_status']))
+    # print("--- Mass flow:               {:3.2f} mg/s".format(m_dot*1e6))
+    # print("--- Isp:                     {:3.1f} s".format(Isp))
+    # print("--- Power consumption:       {:2.1f} W".format(P_ideal))
 
 
 
@@ -263,31 +462,13 @@ def alternative_power_loss(F_desired,T_chamber, channel_amount, settings, w_chan
         steps_g=settings['steps']['steps_g'],       # [-] Fidelity of simulation in gas section of channel
         fp=fp,                                      # [object] Object to access thermodynamic parameters of propellant with
     )
-
-    ### Define function to optimize here, and load settings into fixed design parameters
-    ### IMPORTANT NOTE: if the order of arguments of f() is changed, the order of bounds must be changed too. 
-    # The bounds are defined a bit early here, so one does not forgot this after changing either.
-    b = Bounds(
-        [ # Lower bounds
-            settings['bounds']['w_channel'][0],
-            settings['bounds']['w_channel_spacing'][0],
-            settings['bounds']['T_wall_superheat'][0] + T_chamber,
-        ],
-        [ # Higher bounds
-            settings['bounds']['w_channel'][1],
-            settings['bounds']['w_channel_spacing'][1],
-            settings['bounds']['T_wall_superheat'][1] + T_chamber,
-        ])
-    # Initial guess (just make it the higher bound (arbitary)) NOTE: SAME ORDER APPLIES ABOUNDS AND AS f() below
-    x0 = None # Set the first guess based on a guess being provided or not
-    if (x_guess is None):
-        x0 = [ 
-            settings['bounds']['w_channel'][1],
-            settings['bounds']['w_channel_spacing'][1],
-            settings['bounds']['T_wall_superheat'][1] + T_chamber,
-            ]
-    else:
-        x0 = x_guess
+    # Result for alternative input
+    x_alt = [
+        w_channel,
+        w_channel_spacing,
+        T_wall
+        ]
+    
     # The function to optimize
     def f(x, return_full_results=False): #  NOTE: change bounds above if argument change
         w_channel = x[0]
@@ -343,38 +524,21 @@ def alternative_power_loss(F_desired,T_chamber, channel_amount, settings, w_chan
             #print("P_total: {:2.5f} W".format(P_total))
             # Scipy minimize can't handle multiple returns for the objective function, so the extensive final results must be pulled out afterwards
             if return_full_results:
-                print(res_P)
+                # print(res_P)
                 return res_P
             else:
                 return P_total*settings['function_scaling']
 
-    ## OPTIMIZATION ALGORITHM
-    # First bounds must be set in the same order that arguments are given in f()
-    # The order is: channel_amount, w_channel,w_channel_spacing,T_wall
-    optimization_method = 'L-BFGS-B'
-    optimization_options = {
-        'ftol': 2.220446049250313e-20,
-        'gtol': 1e-10
-    }
 
-    minimize_results = minimize(
-        fun=f,
-        x0=x0,
-        bounds=b,
-        method=optimization_method,
-        options=optimization_options
-        )
 
-    # 
-
-    res_final = f(minimize_results.x, return_full_results=True)
+    res_final = f(x_alt, return_full_results=True)
 
     optim_results = {
-        'minimize_results': minimize_results,
-        'w_channel': minimize_results.x[0],
-        'w_channel_spacing': minimize_results.x[1],
-        'T_wall_top': minimize_results.x[2],
-        'P_total': minimize_results.fun/settings['function_scaling'],
+        'minimize_results': None,
+        'w_channel': None,
+        'w_channel_spacing': None,
+        'T_wall_top': None,
+        'P_total': P_ideal + res_final['P_loss'],
         'P_loss': res_final['P_loss'],
         'P_ideal': P_ideal,
         'l_channel': res_final['l_channel'],
@@ -392,7 +556,6 @@ def alternative_power_loss(F_desired,T_chamber, channel_amount, settings, w_chan
         'w_throat_new': res_final['w_throat_new'],
         'Re_throat_new': res_final['Re_throat_new'],
     }
-    print(optim_results)
     return optim_results
     
 

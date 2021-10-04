@@ -126,6 +126,7 @@ class FluidProperties:
         Returns:
             cp/cv (gamma) (-): Specific heat ratio (gamma)
         """
+
         cp = PropsSI('CPMASS', 'T', T, 'P', p, self.fluid)
         cv = PropsSI('CVMASS', 'T', T, 'P', p, self.fluid)
 

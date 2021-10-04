@@ -12,7 +12,7 @@ import optimization.settings
 
 if __name__ == "__main__":
     F_desired = 4e-3   # [N] Desired thrust
-    T_chamber = 1000     # [K] Chamber temperature
+    T_chamber = 600     # [K] Chamber temperature
     if len(sys.argv)>1:
         F_desired = float(sys.argv[1])*1e-3  # [N] Thrust is passed as micronewtons
         T_chamber = int(sys.argv[2]) # [K] Chamber temperature
@@ -27,7 +27,15 @@ if __name__ == "__main__":
     w_channel_spacing = np.zeros_like(P_total)
     w_channel = np.zeros_like(P_total)
     l_channel = np.zeros_like(P_total)
+    l_channel_l = np.zeros_like(P_total)
+    l_channel_tp = np.zeros_like(P_total)
+    l_channel_g = np.zeros_like(P_total)
+    l_inlet = np.zeros_like(P_total)
+    l_outlet = np.zeros_like(P_total)
+    l_total = np.zeros_like(P_total)
     w_total = np.zeros_like(P_total)
+    w_nozzle = np.zeros_like(P_total)
+    w_inlet = np.zeros_like(P_total)
     Re_channel_l = np.zeros_like(P_total)
     Re_channel_tp = np.zeros_like(P_total)
     Re_channel_g = np.zeros_like(P_total)
@@ -71,7 +79,15 @@ if __name__ == "__main__":
         P_loss[i_channel.index] = results['P_loss']
         w_channel[i_channel.index] = results['w_channel']
         l_channel[i_channel.index] = results['l_channel']
+        l_channel_l[i_channel.index] = results['l_channel_l']
+        l_channel_tp[i_channel.index] = results['l_channel_tp']
+        l_channel_g[i_channel.index] = results['l_channel_g']
+        l_outlet[i_channel.index] = results['l_outlet']
+        l_inlet[i_channel.index] = results['l_inlet']
+        l_total[i_channel.index] = results['l_total']
         w_total[i_channel.index] = results['w_total']
+        w_nozzle[i_channel.index] = results['w_nozzle']
+        w_inlet[i_channel.index] = results['w_inlet']
         pressure_drop[i_channel.index] = results['pressure_drop']
         Re_channel_l[i_channel.index] = results['Re_channel_l']
         Re_channel_tp[i_channel.index] = results['Re_channel_tp']
@@ -101,7 +117,13 @@ if __name__ == "__main__":
         w_channel_spacing=w_channel_spacing,
         T_wall=T_wall,
         T_wall_bottom=T_wall_bottom,
+        l_total=l_total,
+        l_inlet=l_inlet,
+        l_outlet=l_outlet,
         l_channel=l_channel,
+        l_channel_l=l_channel_l,
+        l_channel_tp=l_channel_tp,
+        l_channel_g=l_channel_g,
         w_total=w_total,
         pressure_drop=pressure_drop,
         Re_channel_l=Re_channel_l,
