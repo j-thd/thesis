@@ -12,7 +12,7 @@ import optimization.settings
 
 if __name__ == "__main__":
     F_desired = 4e-3   # [N] Desired thrust
-    T_chamber = 600     # [K] Chamber temperature
+    T_chamber = 1000     # [K] Chamber temperature
     if len(sys.argv)>1:
         F_desired = float(sys.argv[1])*1e-3  # [N] Thrust is passed as micronewtons
         T_chamber = int(sys.argv[2]) # [K] Chamber temperature
