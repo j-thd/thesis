@@ -1,6 +1,7 @@
 # File to plot optimization results from saved files
 
 import math
+import pickle
 import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
@@ -16,11 +17,17 @@ from thermo.prop import FluidProperties
 def run():
     F_desired = 4e-3 # [mN] Thrust
     T_chamber = 1000 # [K] Chamber temperature
-    file_name = "optimization_results/optimization_results-F{:1.0f}mN-{}K.npz".format(F_desired*1e3,T_chamber)
+
+    file_name = "optimization_results/optimization_results-F{:1.0f}mN-{}K".format(F_desired*1e3,T_chamber)
     optimization_settings = optimization.settings.settings_1D_rectangular_multichannel # For the analysis of the answer
 
-    npzfile = open(file_name, "rb")
+    npzfile = open(file_name+".npz", "rb")
+    picklefile = open(file_name+".pkl", "rb")
     data = np.load(npzfile)
+    pickled_data = pickle.load(picklefile)
+    npzfile.close()
+    picklefile.close()
+
 
     # The Isp and m_dot is the same for all cases for a given thrust F and temperature T. It was only saved as an array for convenience
     F_desired = data['F_desired'] # Actually read the fle just to check
@@ -110,32 +117,34 @@ def run():
     #     sens=sensitivity
     # )
 
-    # plotOptimumOutcome(
-    #     channel_amount=data['channel_amount_range'],
-    #     P_loss=data['P_loss'],
-    #     w_channel=data['w_channel'],
-    #     w_channel_spacing=data['w_channel_spacing'],
-    #     T_wall=data['T_wall'],
-    #     str_title=str_title,
-    #     optimum_bounds=optimum_bounds,
-    #     sens=sensitivity)
+    plotOptimumOutcome(
+        channel_amount=data['channel_amount_range'],
+        P_loss=data['P_loss'],
+        w_channel=data['w_channel'],
+        w_channel_spacing=data['w_channel_spacing'],
+        T_wall=data['T_wall'],
+        str_title=str_title,
+        optimum_bounds=optimum_bounds,
+        sens=sensitivity)
 
-    # plotChannelCharacteristics(
-    #     channel_amount=data['channel_amount_range'],
-    #     pressure_drop=data['pressure_drop'],
-    #     l_channel=data['l_total'],
-    #     w_throat_new=data['w_throat_new'],
-    #     w_total=data['w_total'],
-    #     str_title=str_title,
-    #     optimum_bounds=optimum_bounds,
-    #     sens=sensitivity
-    # )
+    plotChannelCharacteristics(
+        channel_amount=data['channel_amount_range'],
+        pressure_drop=data['pressure_drop'],
+        l_channel=data['l_channel'],
+        w_throat_new=data['w_throat_new'],
+        w_total=data['w_total'],
+        str_title=str_title,
+        optimum_bounds=optimum_bounds,
+        sens=sensitivity
+    )
 
     #plotPressureDropVsThroatReynolds(pressure_drop=data['pressure_drop'], Re_throat=data['Re_throat_new'], str_title=str_title, optimum_bounds=optimum_bounds, sens=sensitivity)
 
     #analyze_best_result(id=id,data=data,settings=optimization_settings, str_title=str_title)
 
-    monte_carlo_guess(id=id, data=data,settings=optimization_settings, str_title=str_title)
+    #monte_carlo_guess(id=id, data=data,settings=optimization_settings, str_title=str_title)
+
+    plotHydrodynamicEntranceLengths(data=data, str_title=str_title, optimum_bounds=optimum_bounds, sens=sensitivity)
 
     plt.show()
 
@@ -143,19 +152,21 @@ def plotChannelCharacteristics(channel_amount, pressure_drop, l_channel, w_throa
     fig, axs = plt.subplots(2,2)
     # Total power consumption
     axs[0][0].plot(channel_amount, pressure_drop*1e-5)
-    axs[0][0].set_ylabel("$\Delta P$ [bar]")
+    axs[0][0].set_ylabel("Pressure drop - $\Delta P$ [bar]")
     axs[0][0].grid()
     plotOptimumBounds(optimum_bounds,sens,axs=axs[0][0],labels=True)
     axs[0][1].plot(channel_amount, l_channel*1e3)
-    axs[0][1].set_ylabel("$l_c$ [mm]")
+    axs[0][1].set_ylabel("Channel length - $l_c$ [mm]")
     axs[0][1].grid()
     plotOptimumBounds(optimum_bounds,sens,axs=axs[0][1])
     axs[1][0].plot(channel_amount, w_throat_new*1e6)
-    axs[1][0].set_ylabel("$w_t$ [$\\mu$m]")
+    axs[1][0].set_ylabel("Throat width - $w_t$ [$\\mu$m]")
+    axs[1][1].set_xlabel("Number of channels $N_c$ [-]")
     axs[1][0].grid()
     plotOptimumBounds(optimum_bounds,sens,axs=axs[1][0])
     axs[1][1].plot(channel_amount, w_total*1e3)
-    axs[1][1].set_ylabel("$w_{{chip}}}$ [mm]")
+    axs[1][1].set_ylabel("Chip width - $w_{{chip}}}$ [mm]")
+    axs[1][1].set_xlabel("Number of channels $N_c$ [-]")
     axs[1][1].grid()
     plotOptimumBounds(optimum_bounds,sens, axs=axs[1][1])
     fig.suptitle("Geometry "+str_title)
@@ -166,22 +177,24 @@ def plotOptimumOutcome(channel_amount, P_loss, w_channel, w_channel_spacing, T_w
     fig, axs = plt.subplots(2,2)
     # Total power consumption
     axs[0][0].plot(channel_amount, P_loss)
-    axs[0][0].set_ylabel("$P_{{loss}}$ [W]")
+    axs[0][0].set_ylabel("Power loss - $P_{{loss}}$ [W]")
     axs[0][0].grid()
     plotOptimumBounds(optimum_bounds,sens,axs=axs[0][0],labels=True)
     # Channel width
     axs[0][1].plot(channel_amount, w_channel*1e6)
-    axs[0][1].set_ylabel("$w_c$ [$\\mu$m]")
+    axs[0][1].set_ylabel("Channel width - $w_c$ [$\\mu$m]")
     axs[0][1].grid()
     plotOptimumBounds(optimum_bounds,sens,axs=axs[0][1])
     # Channel width spacing
     axs[1][0].plot(channel_amount, w_channel_spacing*1e6)
-    axs[1][0].set_ylabel("$s_c$ [$\\mu$m]")
+    axs[1][0].set_ylabel("Channel spacing - $s_c$ [$\\mu$m]")
+    axs[1][0].set_xlabel("Number of channels - $N_c$ [-]")
     axs[1][0].grid()
     plotOptimumBounds(optimum_bounds,sens,axs=axs[1][0])
     # Top wall temperature
     axs[1][1].plot(channel_amount, T_wall)
-    axs[1][1].set_ylabel("$T_{{wall}}$ [K]")
+    axs[1][1].set_ylabel("Top wall temperature - $T_{{wall}}$ [K]")
+    axs[1][1].set_xlabel("Number of channels - $N_c$ [-]")
     axs[1][1].grid()
     plotOptimumBounds(optimum_bounds,sens,axs=axs[1][1])
     fig.suptitle("Optimum outcome and parameters "+str_title)
@@ -196,8 +209,8 @@ def plotPressureDropVsThroatReynolds(pressure_drop, Re_throat, str_title, optimu
     plt.axvline(1e-5*pressure_drop[optimum_bounds['min']], label="Optimum", c="red", linestyle="dashed")
     plt.axvline(1e-5*pressure_drop[optimum_bounds['lb']], label=sens_label, c="red", linestyle="dotted")
     plt.axvline(1e-5*pressure_drop[optimum_bounds['ub']],  c="red", linestyle="dotted")
-    plt.xlabel("Pressure drop $\Delta p$ [bar]")
-    plt.ylabel("Throat Reynolds $Re_{{throat,dh}}$ [-]")
+    plt.xlabel("Pressure drop - $\Delta p$ [bar]")
+    plt.ylabel("Throat Reynolds - $Re_{{throat,dh}}$ [-]")
     plt.title("Throat Reynolds vs. pressure drop " + str_title)
     plt.grid()
     plt.legend()
@@ -210,6 +223,40 @@ def plotPressureDropVsThroatReynolds(pressure_drop, Re_throat, str_title, optimu
     print("Re_lb {:4.0f} ({:2.1f})%".format(Re_lb, (Re_lb-Re_min)/Re_min*100))
     print("Re_min {:4.0f}".format(Re_min))
     print("Re_ub {:4.0f} ({:2.1f})%".format(Re_ub, (Re_ub-Re_min)/Re_min*100))
+
+def plotHydrodynamicEntranceLengths(data, str_title, optimum_bounds, sens):
+    plt.figure()
+
+    channel_amount = data['channel_amount_range']
+    # Get Reynolds numbers and hydrodynamic entrance lengths
+    Re_l = data['Re_channel_l']
+    Re_g = data['Re_channel_g']
+    hydraulic_diameter = data['hydraulic_diameter'][0]
+    
+    
+    X_h_l = 0.04*Re_l*hydraulic_diameter
+    X_h_g = 0.04*Re_g*hydraulic_diameter
+
+    plt.plot(channel_amount, X_h_g*1e6, label='Hydrodynamic Entrance Length')
+    plt.plot(channel_amount, data['l_channel_g']*1e6, label='Actual Length')
+    plotOptimumBounds(optimum_bounds=optimum_bounds, sens=sens, labels=True)
+    plt.xlabel("Number of channels $N_c$[-]")
+    plt.ylabel("Hydrodynamic Entrance Length $X_h$ [$\\mu$m]\n Actual gas section length - $l_{{c,g}}$ [$\\mu$m]")
+    plt.title("Hydrodynamic Entrance Length vs. Gas Section Length \n"+str_title)
+    plt.tight_layout()
+    plt.legend()
+    plt.grid()
+
+    plt.figure()
+    plt.plot(channel_amount, X_h_l*1e6, label='Hydrodynamic Entrance Length')
+    plt.plot(channel_amount, data['l_channel_l']*1e6, label='Actual Length')
+    plotOptimumBounds(optimum_bounds=optimum_bounds, sens=sens, labels=True)
+    plt.xlabel("Number of channels $N_c$[-]")
+    plt.ylabel("Hydrodynamic Entrance Length $X_h$ [$\\mu$m]\n Actual liquid section length- $l_{{c,l}}$ [$\\mu$m]")
+    plt.title("Hydrodynamic Entrance Length vs. Actual liquid Section Length\n"+str_title)
+    plt.tight_layout()
+    plt.legend()
+    plt.grid()
 
 def plotReynolds(channel_amount, Re_l, Re_tp, Re_g, Re_throat, str_title, optimum_bounds, sens):
     plt.figure()

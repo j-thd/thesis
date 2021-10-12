@@ -1,5 +1,6 @@
 # File to configure optimization and run it
 import sys
+import pickle
 import numpy as np
 from matplotlib import pyplot as plt
 import timeit # To time speed of optmization
@@ -12,20 +13,25 @@ import optimization.settings
 
 if __name__ == "__main__":
     F_desired = 4e-3   # [N] Desired thrust
-    T_chamber = 1000     # [K] Chamber temperature
+    T_chamber = 800     # [K] Chamber temperature
     if len(sys.argv)>1:
         F_desired = float(sys.argv[1])*1e-3  # [N] Thrust is passed as micronewtons
         T_chamber = int(sys.argv[2]) # [K] Chamber temperature
 
-    save_file = open("optimization_results/optimization_results-F{:1.0f}mN-{:3.0f}K.npz".format(F_desired*1e3, T_chamber), "wb")
+    str_save_file = "optimization_results/optimization_results-F{:1.0f}mN-{:3.0f}K".format(F_desired*1e3, T_chamber)
+    save_file = open(str_save_file+ ".npz", "wb")
+    save_file_companion = open(str_save_file+ ".pkl", "wb")
 
     # Load all settings
     channel_amount_range = np.arange(1,30)
+    full_results = [] # List storing full results
+    full_prepared_values = [] # List storing full prepared values
     P_total = np.zeros(len(channel_amount_range))
     P_loss = np.zeros_like(P_total)
     w_channel = np.zeros_like(P_total)
     w_channel_spacing = np.zeros_like(P_total)
     w_channel = np.zeros_like(P_total)
+    h_channel = np.zeros_like(P_total)
     l_channel = np.zeros_like(P_total)
     l_channel_l = np.zeros_like(P_total)
     l_channel_tp = np.zeros_like(P_total)
@@ -36,6 +42,7 @@ if __name__ == "__main__":
     w_total = np.zeros_like(P_total)
     w_nozzle = np.zeros_like(P_total)
     w_inlet = np.zeros_like(P_total)
+    hydraulic_diameter = np.zeros_like(P_total)
     Re_channel_l = np.zeros_like(P_total)
     Re_channel_tp = np.zeros_like(P_total)
     Re_channel_g = np.zeros_like(P_total)
@@ -75,10 +82,15 @@ if __name__ == "__main__":
         print("- Channel spacing:       {:3.3f} micron".format(results['w_channel_spacing']*1e6))
         print("- Top wall temperature:  {:3.2f} K".format(results['T_wall_top']))
 
+        full_results.append(results['full_res'])
+        full_prepared_values.append(results['full_prepared_values'])
+
         P_total[i_channel.index] = results['P_total']
         P_loss[i_channel.index] = results['P_loss']
         w_channel[i_channel.index] = results['w_channel']
+        h_channel[i_channel.index] = results['h_channel']
         l_channel[i_channel.index] = results['l_channel']
+        hydraulic_diameter[i_channel.index] = results['hydraulic_diameter']
         l_channel_l[i_channel.index] = results['l_channel_l']
         l_channel_tp[i_channel.index] = results['l_channel_tp']
         l_channel_g[i_channel.index] = results['l_channel_g']
@@ -105,8 +117,13 @@ if __name__ == "__main__":
         
     stop = timeit.default_timer()
     print("Time elapsed: {} seconds".format(stop-start))
-
-    # Save results
+    
+    # Save full-results and full prepared values
+    full_dict = {'res': full_results, 'prepared_values': full_prepared_values}
+    pickle.dump(full_dict, save_file_companion)
+    save_file_companion.close()
+    
+    # Save overall results
     np.savez(save_file,
         F_desired=F_desired,
         T_chamber=T_chamber,
@@ -114,6 +131,8 @@ if __name__ == "__main__":
         P_total=P_total,
         P_loss=P_loss,
         w_channel=w_channel,
+        h_channel=h_channel,
+        hydraulic_diameter=hydraulic_diameter,
         w_channel_spacing=w_channel_spacing,
         T_wall=T_wall,
         T_wall_bottom=T_wall_bottom,
@@ -136,7 +155,8 @@ if __name__ == "__main__":
         p_inlet=p_inlet,
         w_throat_new=w_throat_new,
         Re_throat_new=Re_throat_new
-        )
+    )
+    save_file.close()
 
     plt.figure()
     plt.plot(channel_amount_range, P_total)

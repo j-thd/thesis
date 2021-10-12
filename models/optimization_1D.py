@@ -191,8 +191,12 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
         P_rad_loss_top = chamber.radiation_loss(T=T_wall, A=A_chip, emmisivity=emissivity_top) # [W]  Radiation loss through top of chip
         P_rad_loss_bottom = chamber.radiation_loss(T=wall_args['T_wall_bottom'],A=A_chip, emmisivity=wall_args['emissivity_chip_bottom']) # Radiation loss through bottom of chip
         P_loss = P_rad_loss_top + P_rad_loss_bottom # [W] Total heat loss
-        return {'P_loss': P_loss, # [W] Current approximation of heat loss
+        return {'res': res,
+                'prepared_values': prepared_values,
+                'P_loss': P_loss, # [W] Current approximation of heat loss
                 'l_channel': l_channel, # [m] Channel length
+                'h_channel': h_channel, # [m] Channel depth
+                'hydraulic_diameter': hydraulic_diameter, # [m] Hydraulic diameter
                 'l_channel_l': res['res_l']['L'][-1], # [m] Section length (liquid phase)
                 'l_channel_tp': res['res_tp']['L'][-1], # [m] Channel length
                 'l_channel_g': res['res_g']['L'][-1], # [m] Channel length

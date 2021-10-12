@@ -157,7 +157,6 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
             #print("P_total: {:2.5f} W".format(P_total))
             # Scipy minimize can't handle multiple returns for the objective function, so the extensive final results must be pulled out afterwards
             if return_full_results:
-                print(res_P)
                 return res_P
             else:
                 return P_total*settings['function_scaling']
@@ -184,6 +183,8 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
     res_final = f(minimize_results.x, return_full_results=True)
 
     optim_results = {
+        'full_res': res_final['res'],
+        'full_prepared_values': res_final['prepared_values'],
         'minimize_results': minimize_results,
         'w_channel': minimize_results.x[0],
         'w_channel_spacing': minimize_results.x[1],
@@ -192,6 +193,8 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
         'P_loss': res_final['P_loss'],
         'P_ideal': P_ideal,
         'l_channel': res_final['l_channel'],
+        'h_channel': res_final['h_channel'],
+        'hydraulic_diameter': res_final['hydraulic_diameter'],
         'l_inlet': res_final['l_inlet'],
         'l_total': res_final['l_total'],
         'l_outlet': res_final['l_outlet'],
@@ -214,7 +217,7 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
         'w_throat_new': res_final['w_throat_new'],
         'Re_throat_new': res_final['Re_throat_new'],
     }
-    print(optim_results)
+    #print(optim_results)
     return optim_results
 
         
