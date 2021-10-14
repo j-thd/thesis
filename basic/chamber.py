@@ -358,6 +358,62 @@ def outlet_length(w_channel, w_channel_spacing, channel_amount, convergent_half_
 
     return l_convergent + l_divergent + l_exit_manifold # [m] Total outlet length
 
+def convergent_length(w_channel, w_channel_spacing, channel_amount, convergent_half_angle, w_throat, divergent_half_angle, AR_exit, l_exit_manifold=0.0):
+    """Calculate the outlet length (entire nozzle + exit manifold) of a channel for the purpose of determining the entire rectangular chip size
+
+    Args:
+        w_channel (m): Channel width
+        w_channel_spacing (m): Spacing between channels
+        channel_amount (-): Amount of parallel channels
+        convergent_half_angle (rad): Half-angle of convergent nozzle part
+        w_throat (m): width
+        divergent_half_angle (rad): Half-angle of divergent nozzle part
+        AR_exit (-): Exit area ratio
+        l_exit_manifold (m, optional): Length of exit manifold, before convergent nozzle section begins. Defaults to 0.
+
+    Returns:
+        l_outlet (m): Total outlet length
+    """
+    # The exit manifold length determines the convergent part of the nozzle length, if a convergent angle is chosen to be fixed
+    w_exit_manifold = channel_amount * w_channel + (channel_amount-1) * w_channel_spacing # [m] Total width of exit manifold (before feeding into nozzle)
+    # L is the length of the virtual right-angled triangle that would appear if the nozzle was 0 micron wide.
+    L_conv = 0.5*w_exit_manifold/math.tan(convergent_half_angle) # [m] Virtual nozzle length
+    # Now the actual length
+    l_convergent = L_conv * ( 1 - w_throat/w_exit_manifold ) # [m] Length of virtual convergent triangle up to throat 
+    # The same process but for the exit
+    L_div = 0.5*w_throat*AR_exit / math.tan(divergent_half_angle)
+    l_divergent = L_div * ( 1 - 1/AR_exit) # [m] Length form virtual divergent triangle from the throat 
+
+    return l_convergent # [m] Total outlet length
+
+def divergent_length(w_channel, w_channel_spacing, channel_amount, convergent_half_angle, w_throat, divergent_half_angle, AR_exit, l_exit_manifold=0.0):
+    """Calculate the outlet length (entire nozzle + exit manifold) of a channel for the purpose of determining the entire rectangular chip size
+
+    Args:
+        w_channel (m): Channel width
+        w_channel_spacing (m): Spacing between channels
+        channel_amount (-): Amount of parallel channels
+        convergent_half_angle (rad): Half-angle of convergent nozzle part
+        w_throat (m): width
+        divergent_half_angle (rad): Half-angle of divergent nozzle part
+        AR_exit (-): Exit area ratio
+        l_exit_manifold (m, optional): Length of exit manifold, before convergent nozzle section begins. Defaults to 0.
+
+    Returns:
+        l_outlet (m): Total outlet length
+    """
+    # The exit manifold length determines the convergent part of the nozzle length, if a convergent angle is chosen to be fixed
+    w_exit_manifold = channel_amount * w_channel + (channel_amount-1) * w_channel_spacing # [m] Total width of exit manifold (before feeding into nozzle)
+    # L is the length of the virtual right-angled triangle that would appear if the nozzle was 0 micron wide.
+    L_conv = 0.5*w_exit_manifold/math.tan(convergent_half_angle) # [m] Virtual nozzle length
+    # Now the actual length
+    l_convergent = L_conv * ( 1 - w_throat/w_exit_manifold ) # [m] Length of virtual convergent triangle up to throat 
+    # The same process but for the exit
+    L_div = 0.5*w_throat*AR_exit / math.tan(divergent_half_angle)
+    l_divergent = L_div * ( 1 - 1/AR_exit) # [m] Length form virtual divergent triangle from the throat 
+
+    return l_divergent # [m] Total outlet length
+
 def basic_substrate_heat_loss(T_top, kappa, emissivity, thickness, A_substrate):
     """Determine the heat loss through the substrate the chip is mounted on, by assuming it only conducts through it and radiates away
         Equations are solved by equation conduction and radiation

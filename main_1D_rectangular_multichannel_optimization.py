@@ -28,6 +28,7 @@ if __name__ == "__main__":
     full_prepared_values = [] # List storing full prepared values
     P_total = np.zeros(len(channel_amount_range))
     P_loss = np.zeros_like(P_total)
+    P_ideal = np.zeros_like(P_total)
     w_channel = np.zeros_like(P_total)
     w_channel_spacing = np.zeros_like(P_total)
     w_channel = np.zeros_like(P_total)
@@ -38,6 +39,8 @@ if __name__ == "__main__":
     l_channel_g = np.zeros_like(P_total)
     l_inlet = np.zeros_like(P_total)
     l_outlet = np.zeros_like(P_total)
+    l_divergent = np.zeros_like(P_total)
+    l_convergent = np.zeros_like(P_total)
     l_total = np.zeros_like(P_total)
     w_total = np.zeros_like(P_total)
     w_nozzle = np.zeros_like(P_total)
@@ -87,6 +90,7 @@ if __name__ == "__main__":
 
         P_total[i_channel.index] = results['P_total']
         P_loss[i_channel.index] = results['P_loss']
+        P_ideal[i_channel.index] = results['P_ideal']
         w_channel[i_channel.index] = results['w_channel']
         h_channel[i_channel.index] = results['h_channel']
         l_channel[i_channel.index] = results['l_channel']
@@ -95,6 +99,8 @@ if __name__ == "__main__":
         l_channel_tp[i_channel.index] = results['l_channel_tp']
         l_channel_g[i_channel.index] = results['l_channel_g']
         l_outlet[i_channel.index] = results['l_outlet']
+        l_divergent[i_channel.index] = results['l_divergent']
+        l_convergent[i_channel.index] = results['l_convergent']
         l_inlet[i_channel.index] = results['l_inlet']
         l_total[i_channel.index] = results['l_total']
         w_total[i_channel.index] = results['w_total']
@@ -129,6 +135,7 @@ if __name__ == "__main__":
         T_chamber=T_chamber,
         channel_amount_range=channel_amount_range,
         P_total=P_total,
+        P_ideal=P_ideal,
         P_loss=P_loss,
         w_channel=w_channel,
         h_channel=h_channel,
@@ -139,6 +146,8 @@ if __name__ == "__main__":
         l_total=l_total,
         l_inlet=l_inlet,
         l_outlet=l_outlet,
+        l_convergent=l_convergent,
+        l_divergent=l_divergent,
         l_channel=l_channel,
         l_channel_l=l_channel_l,
         l_channel_tp=l_channel_tp,

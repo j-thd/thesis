@@ -16,7 +16,7 @@ from thermo.prop import FluidProperties
 
 def run():
     F_desired = 4e-3 # [mN] Thrust
-    T_chamber = 1000 # [K] Chamber temperature
+    T_chamber = 600 # [K] Chamber temperature
 
     file_name = "optimization_results/optimization_results-F{:1.0f}mN-{}K".format(F_desired*1e3,T_chamber)
     optimization_settings = optimization.settings.settings_1D_rectangular_multichannel # For the analysis of the answer
@@ -25,8 +25,7 @@ def run():
     picklefile = open(file_name+".pkl", "rb")
     data = np.load(npzfile)
     pickled_data = pickle.load(picklefile)
-    npzfile.close()
-    picklefile.close()
+    
 
 
     # The Isp and m_dot is the same for all cases for a given thrust F and temperature T. It was only saved as an array for convenience
@@ -45,16 +44,22 @@ def run():
     # Say where minimal power consumption was found.
     id = np.argmin(data['P_loss']) # Index of result with lowest power consumption
     P_min = data['P_loss'][id] # [W] Minimal power consumption
+    P_ideal = data['P_ideal'][id] # [W] Minimal power consumption
+    P_total = data['P_total'][id] # [W] Total power consumption
     channel_min = data['channel_amount_range'][id] # [-] Amount of channels
     w_channel_min = data['w_channel'][id]
     w_channel_spacing_min = data['w_channel_spacing'][id]
     T_wall_top_min = data['T_wall'][id]
+    pressure_drop_min = data['pressure_drop'][id]
     print('\n----- BEST RESULT:')
-    print(" Power consumption:       {:2.3f} W".format(P_min))
-    print(" Amount of channels:      {:2.0f}".format(channel_min))
-    print(" Channel width:           {:3.4f} micron".format(w_channel_min*1e6) )
-    print(" Channel spacing:         {:3.4f} micron".format(w_channel_spacing_min*1e6) )
-    print(" Top wall temperature:    {:3.4f} K".format(T_wall_top_min))
+    print(" Power loss:                 {:2.3f} W".format(P_min))
+    print(" Total power consumption:    {:2.3f} W".format(P_total))
+    print(" Ideal power consumption:    {:2.3f} W".format(P_ideal))
+    print(" Amount of channels:         {:2.0f}".format(channel_min))
+    print(" Channel width:              {:3.4f} micron".format(w_channel_min*1e6) )
+    print(" Channel spacing:            {:3.4f} micron".format(w_channel_spacing_min*1e6) )
+    print(" Top wall temperature:       {:3.4f} K".format(T_wall_top_min))
+    print(" Pressure drop:              {:1.2f} bar".format(pressure_drop_min*1e-5))
 
     # Determine parameters at best result
     Re_l_min = data['Re_channel_l'][id]
@@ -62,10 +67,14 @@ def run():
     Re_g_min = data['Re_channel_g'][id]
     Re_throat_min = data['Re_throat_new'][id]
 
-    l_total_min = data['l_total'][id]
+    l_channel_min = data['l_channel'][id]
     l_channel_l_min = data['l_channel_l'][id]
     l_channel_tp_min = data['l_channel_tp'][id]
     l_channel_g_min = data['l_channel_g'][id]
+
+    l_inlet_min = data['l_inlet'][id]
+    
+
 
     print("\n---- PARAMETERS AT BEST RESULT:")
     print(" - Reynolds:")
@@ -74,9 +83,12 @@ def run():
     print("  * Gas:       {:3.1f}".format(Re_g_min))
     print("  * Throat:    {:3.1f}".format(Re_throat_min))
     print(" - Channel section length:")
+    print("  * Total:     {:3.1f} micron".format(l_channel_min*1e6))
     print("  * Liquid:    {:3.1f} micron".format(l_channel_l_min*1e6))
     print("  * Two-phase: {:3.1f} micron".format(l_channel_tp_min*1e6))
     print("  * Gas:       {:3.1f} micron".format(l_channel_g_min*1e6))
+    print(" - Other length dimensions:")
+
     
 
 
@@ -144,9 +156,13 @@ def run():
 
     #monte_carlo_guess(id=id, data=data,settings=optimization_settings, str_title=str_title)
 
-    plotHydrodynamicEntranceLengths(data=data, str_title=str_title, optimum_bounds=optimum_bounds, sens=sensitivity)
+    #plotHydrodynamicEntranceLengths(data=data, str_title=str_title, optimum_bounds=optimum_bounds, sens=sensitivity)
 
     plt.show()
+
+    # Close files
+    npzfile.close()
+    picklefile.close()
 
 def plotChannelCharacteristics(channel_amount, pressure_drop, l_channel, w_throat_new, w_total, str_title, optimum_bounds, sens):
     fig, axs = plt.subplots(2,2)
@@ -161,7 +177,7 @@ def plotChannelCharacteristics(channel_amount, pressure_drop, l_channel, w_throa
     plotOptimumBounds(optimum_bounds,sens,axs=axs[0][1])
     axs[1][0].plot(channel_amount, w_throat_new*1e6)
     axs[1][0].set_ylabel("Throat width - $w_t$ [$\\mu$m]")
-    axs[1][1].set_xlabel("Number of channels $N_c$ [-]")
+    axs[1][0].set_xlabel("Number of channels $N_c$ [-]")
     axs[1][0].grid()
     plotOptimumBounds(optimum_bounds,sens,axs=axs[1][0])
     axs[1][1].plot(channel_amount, w_total*1e3)
@@ -169,7 +185,7 @@ def plotChannelCharacteristics(channel_amount, pressure_drop, l_channel, w_throa
     axs[1][1].set_xlabel("Number of channels $N_c$ [-]")
     axs[1][1].grid()
     plotOptimumBounds(optimum_bounds,sens, axs=axs[1][1])
-    fig.suptitle("Geometry "+str_title)
+    fig.suptitle("Chip geometry for optimal design\nfor "+str_title)
     axs[0][0].legend()
     plt.tight_layout(pad=0.5)
 
@@ -197,7 +213,7 @@ def plotOptimumOutcome(channel_amount, P_loss, w_channel, w_channel_spacing, T_w
     axs[1][1].set_xlabel("Number of channels - $N_c$ [-]")
     axs[1][1].grid()
     plotOptimumBounds(optimum_bounds,sens,axs=axs[1][1])
-    fig.suptitle("Optimum outcome and parameters "+str_title)
+    fig.suptitle("Optimal outcome and design parameters \n for "+str_title)
     axs[0][0].legend()
     plt.tight_layout(pad=0.5)
 
@@ -238,10 +254,10 @@ def plotHydrodynamicEntranceLengths(data, str_title, optimum_bounds, sens):
     X_h_g = 0.04*Re_g*hydraulic_diameter
 
     plt.plot(channel_amount, X_h_g*1e6, label='Hydrodynamic Entrance Length')
-    plt.plot(channel_amount, data['l_channel_g']*1e6, label='Actual Length')
+    plt.plot(channel_amount, data['l_channel_g']*1e6, label='Section Length')
     plotOptimumBounds(optimum_bounds=optimum_bounds, sens=sens, labels=True)
-    plt.xlabel("Number of channels $N_c$[-]")
-    plt.ylabel("Hydrodynamic Entrance Length $X_h$ [$\\mu$m]\n Actual gas section length - $l_{{c,g}}$ [$\\mu$m]")
+    plt.xlabel("Number of channels - $N_c$ [-]")
+    plt.ylabel("Hydrodynamic Entrance Length $X_h$ [$\\mu$m]\n Gas section length - $l_{{c,g}}$ [$\\mu$m]")
     plt.title("Hydrodynamic Entrance Length vs. Gas Section Length \n"+str_title)
     plt.tight_layout()
     plt.legend()
@@ -249,11 +265,11 @@ def plotHydrodynamicEntranceLengths(data, str_title, optimum_bounds, sens):
 
     plt.figure()
     plt.plot(channel_amount, X_h_l*1e6, label='Hydrodynamic Entrance Length')
-    plt.plot(channel_amount, data['l_channel_l']*1e6, label='Actual Length')
+    plt.plot(channel_amount, data['l_channel_l']*1e6, label='Section Length')
     plotOptimumBounds(optimum_bounds=optimum_bounds, sens=sens, labels=True)
-    plt.xlabel("Number of channels $N_c$[-]")
-    plt.ylabel("Hydrodynamic Entrance Length $X_h$ [$\\mu$m]\n Actual liquid section length- $l_{{c,l}}$ [$\\mu$m]")
-    plt.title("Hydrodynamic Entrance Length vs. Actual liquid Section Length\n"+str_title)
+    plt.xlabel("Number of channels - $N_c$ [-]")
+    plt.ylabel("Hydrodynamic Entrance Length $X_h$ [$\\mu$m]\n Liquid section length- $l_{{c,l}}$ [$\\mu$m]")
+    plt.title("Hydrodynamic Entrance Length vs. Liquid Section Length\n"+str_title)
     plt.tight_layout()
     plt.legend()
     plt.grid()

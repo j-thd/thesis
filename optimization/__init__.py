@@ -198,6 +198,8 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
         'l_inlet': res_final['l_inlet'],
         'l_total': res_final['l_total'],
         'l_outlet': res_final['l_outlet'],
+        'l_convergent': res_final['l_convergent'],
+        'l_divergent': res_final['l_divergent'],
         'l_channel_l': res_final['l_channel_l'],
         'l_channel_tp': res_final['l_channel_tp'],
         'l_channel_g': res_final['l_channel_g'],
