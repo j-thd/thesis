@@ -72,7 +72,17 @@ def run():
     l_channel_tp_min = data['l_channel_tp'][id]
     l_channel_g_min = data['l_channel_g'][id]
 
+    l_total_min = data['l_total'][id]
     l_inlet_min = data['l_inlet'][id]
+    l_convergent_min = data['l_convergent'][id]
+    l_divergent_min = data['l_divergent'][id]
+    w_channels_total_min = data['w_channels_total'][id]
+    w_inlet_min = data['w_inlet'][id]
+    w_throat_min = data['w_throat_new'][id]
+    w_nozzle_min = data['w_nozzle'][id]
+    w_total_min = data['w_total'][id]
+    A_chip_min = data['A_chip'][id]
+
     
 
 
@@ -88,6 +98,18 @@ def run():
     print("  * Two-phase: {:3.1f} micron".format(l_channel_tp_min*1e6))
     print("  * Gas:       {:3.1f} micron".format(l_channel_g_min*1e6))
     print(" - Other length dimensions:")
+    print("  * Total:       {:1.3f} mm".format(l_total_min*1e3))
+    print("  * Inlet:       {:1.3f} mm".format(l_inlet_min*1e3))
+    print("  * Channel:     {:1.3f} mm".format(l_channel_min*1e3))
+    print("  * Divergent:   {:1.3f} mm".format(l_divergent_min*1e3))
+    print("  * Convergent:  {:1.3f} mm".format(l_convergent_min*1e3))
+    print(" - Other width dimensions:")
+    print("  * Total:           {:1.3f} mm".format(w_total_min*1e3))
+    print("  * Throat:          {:3.1f} micron".format(w_throat_min*1e6))
+    print("  * Nozzle exit:     {:3.1f} micron".format(w_nozzle_min*1e6))
+    print("  * Inlet:           {:1.3f} mm".format(w_inlet_min*1e3))
+    print("  * All channels:    {:1.3f} mm".format(w_channels_total_min*1e3))
+    print(" - TOTAL AREA: {:2.3f} mm^2".format(A_chip_min*1e6))
 
     
 

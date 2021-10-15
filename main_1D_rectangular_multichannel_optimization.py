@@ -13,12 +13,12 @@ import optimization.settings
 
 if __name__ == "__main__":
     F_desired = 4e-3   # [N] Desired thrust
-    T_chamber = 800     # [K] Chamber temperature
+    T_chamber = 1200     # [K] Chamber temperature
     if len(sys.argv)>1:
         F_desired = float(sys.argv[1])*1e-3  # [N] Thrust is passed as micronewtons
         T_chamber = int(sys.argv[2]) # [K] Chamber temperature
 
-    str_save_file = "optimization_results/optimization_results-F{:1.0f}mN-{:3.0f}K".format(F_desired*1e3, T_chamber)
+    str_save_file = "optimization_results-4mN/optimization_results-F{:1.0f}mN-{:3.0f}K".format(F_desired*1e3, T_chamber)
     save_file = open(str_save_file+ ".npz", "wb")
     save_file_companion = open(str_save_file+ ".pkl", "wb")
 
@@ -43,6 +43,8 @@ if __name__ == "__main__":
     l_convergent = np.zeros_like(P_total)
     l_total = np.zeros_like(P_total)
     w_total = np.zeros_like(P_total)
+    A_chip = np.zeros_like(P_total)
+    w_channels_total = np.zeros_like(P_total)
     w_nozzle = np.zeros_like(P_total)
     w_inlet = np.zeros_like(P_total)
     hydraulic_diameter = np.zeros_like(P_total)
@@ -92,6 +94,7 @@ if __name__ == "__main__":
         P_loss[i_channel.index] = results['P_loss']
         P_ideal[i_channel.index] = results['P_ideal']
         w_channel[i_channel.index] = results['w_channel']
+        w_channels_total[i_channel.index] = results['w_channels_total']
         h_channel[i_channel.index] = results['h_channel']
         l_channel[i_channel.index] = results['l_channel']
         hydraulic_diameter[i_channel.index] = results['hydraulic_diameter']
@@ -104,6 +107,7 @@ if __name__ == "__main__":
         l_inlet[i_channel.index] = results['l_inlet']
         l_total[i_channel.index] = results['l_total']
         w_total[i_channel.index] = results['w_total']
+        A_chip[i_channel.index] = results['A_chip']
         w_nozzle[i_channel.index] = results['w_nozzle']
         w_inlet[i_channel.index] = results['w_inlet']
         pressure_drop[i_channel.index] = results['pressure_drop']
@@ -138,12 +142,16 @@ if __name__ == "__main__":
         P_ideal=P_ideal,
         P_loss=P_loss,
         w_channel=w_channel,
+        w_channels_total=w_channels_total,
+        w_inlet=w_inlet,
+        w_nozzle=w_nozzle,
         h_channel=h_channel,
         hydraulic_diameter=hydraulic_diameter,
         w_channel_spacing=w_channel_spacing,
         T_wall=T_wall,
         T_wall_bottom=T_wall_bottom,
         l_total=l_total,
+        A_chip=A_chip,
         l_inlet=l_inlet,
         l_outlet=l_outlet,
         l_convergent=l_convergent,

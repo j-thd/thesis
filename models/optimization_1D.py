@@ -176,8 +176,30 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
             AR_exit=AR_exit,
             l_exit_manifold=l_exit_manifold
             )
+
+        l_convergent = chamber.convergent_length(\
+            w_channel=w_channel,
+            w_channel_spacing=w_channel_spacing,
+            channel_amount=channel_amount,
+            convergent_half_angle=convergent_half_angle,
+            w_throat=w_throat_new,
+            divergent_half_angle=divergent_half_angle,
+            AR_exit=AR_exit,
+            l_exit_manifold=l_exit_manifold
+            )
         
+        l_divergent = chamber.divergent_length(\
+            w_channel=w_channel,
+            w_channel_spacing=w_channel_spacing,
+            channel_amount=channel_amount,
+            convergent_half_angle=convergent_half_angle,
+            w_throat=w_throat_new,
+            divergent_half_angle=divergent_half_angle,
+            AR_exit=AR_exit,
+            l_exit_manifold=l_exit_manifold
+            )
         
+        w_channels_total = (w_channel*channel_amount)+w_channel_spacing*(channel_amount-1)
         l_inlet_manifold = chamber.inlet_manifold_length(w_inlet_manifold=w_inlet_manifold, inlet_manifold_length_factor=inlet_manifold_length_factor)
         l_total = chamber.total_chip_length(l_inlet_manifold=l_inlet_manifold, l_channel=l_channel, l_outlet=l_outlet)
         w_total = chamber.total_chip_width(\
@@ -203,11 +225,15 @@ def optim_P_total(channel_amount, w_channel, h_channel, inlet_manifold_length_fa
                 'pressure_drop': res['dP_total'], # [Pa] Total pressure drop
                 'dP_contraction': res['dP_contraction'], # [Pa] Pressure drop due to contraction
                 'w_total': w_total, # [m] Total chip width
+                'w_channels_total': w_channels_total, # [m] Total chip width
                 'w_nozzle': w_throat_new*AR_exit, # [m] Total chip width
                 'w_inlet': w_inlet_manifold, # [m] Total chip width
                 'l_total': l_total, # [m] Total chip length
                 'l_inlet': l_inlet_manifold, # [m] Total chip length
                 'l_outlet': l_outlet, # [m] Total chip length
+                'l_convergent': l_convergent, # [m] Total chip length
+                'l_divergent': l_divergent, # [m] Total chip length
+                'A_chip': A_chip, # [m] Total chip length
                 'is_channel_choked': is_channel_choked, # [bool] 0 and 1 in this case, to check if channels are not too small
                 'Re_channel_exit_after_dP': Re_channel_exit_after_dP, # [-] Check Reynolds number to see if laminar flow assumptions still hold
                 'M_channel_exit_after_dP': M_channel_exit_after_dP, # [-] Check Mach number to see if it is a problem
