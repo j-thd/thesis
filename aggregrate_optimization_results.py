@@ -6,13 +6,15 @@ import matplotlib.pyplot as plt
 
 def run():
     str_4mN_folder = "optimization_results-4mN/"
-    npz_files = discover_npz_files(str_4mN_folder)
+    str_5mN_folder = "optimization_results-5mN/"
+    npz_files = discover_npz_files(str_5mN_folder)
     npz_data = read_and_order_npz_data(npz_files)
     data = process_data(npz_data)
 
     plotIspVsPower(data)
     plotOptimalDesign(data)
     plotThroatPressureResults(data)
+    plotHighLevelStuff(data)
 
     plt.show()
 
@@ -120,11 +122,33 @@ def plotIspVsPower(data):
     plt.legend()
     plt.grid()
 
+def plotHighLevelStuff(data):
+    fig, axs = plt.subplots(2,2)
+    # Power consumption vs. chamber temperature
+    axs[0][0].plot(data['T_chamber'], data['P_total'])
+    axs[0][0].set_ylabel("Total Power Consumption - $P_{{total}}$ [W]")
+    #axs[0][0].set_xlabel("Chamber temperature - $T_c$ [K]")
+    axs[0][0].grid()
+    axs[0][1].plot(data['T_chamber'], data['m_dot']*1e6)
+    axs[0][1].set_ylabel("Mass flow - $\\dot{{m}}$ [mg$\\cdot$s$^{{-1}}$]")
+    axs[0][1].grid()
+    axs[1][0].plot(data['T_chamber'], data['Isp'])
+    axs[1][0].set_ylabel("Specific Impulse - $I_{{sp}}$ [s]")
+    axs[1][0].set_xlabel("Chamber temperature - $T_c$ [K]")
+    axs[1][0].grid()
+    axs[1][1].plot(data['T_chamber'], (data['P_ideal']/data['P_total']))
+    axs[1][1].set_ylabel("Heating efficiency - $\\mu$ [-]")
+    axs[1][1].set_xlabel("Chamber temperature - $T_c$ [K]")
+    axs[1][1].grid()
+    fig.suptitle("High-level performance ({:2.1f}) mN".format(data['F_desired'][0]*1e3))
+    #axs[0][0].legend()
+    plt.tight_layout(pad=0.5)
+
 def plotOptimalDesign(data):
     fig, axs = plt.subplots(2,2)
     # Total power consumption
-    axs[0][0].plot(data['Isp'], data['T_chamber'])
-    axs[0][0].set_ylabel("Chamber temperature - $T_c$ [K]")
+    axs[0][0].plot(data['Isp'], data['channel_amount'])
+    axs[0][0].set_ylabel("Number of channels - $N_c$ [-]")
     axs[0][0].grid()
     axs[0][1].plot(data['Isp'], data['T_wall']-data['T_chamber'])
     axs[0][1].set_ylabel("Top wall superheat - $(T_w-T_c)$ [K]")

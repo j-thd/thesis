@@ -8,17 +8,18 @@ import timeit # To time speed of optmization
 import optimization
 import optimization.settings
 
+F = 5e-3
+T = 1000
+str_f= "optimization_results-5mN/"
 
 
+def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case it is run as main
 
-if __name__ == "__main__":
-    F_desired = 4e-3   # [N] Desired thrust
-    T_chamber = 1200     # [K] Chamber temperature
-    if len(sys.argv)>1:
-        F_desired = float(sys.argv[1])*1e-3  # [N] Thrust is passed as micronewtons
-        T_chamber = int(sys.argv[2]) # [K] Chamber temperature
+    # if len(sys.argv)>1:
+    #     F_desired = float(sys.argv[1])*1e-3  # [N] Thrust is passed as micronewtons
+    #     T_chamber = int(sys.argv[2]) # [K] Chamber temperature
 
-    str_save_file = "optimization_results-4mN/optimization_results-F{:1.0f}mN-{:3.0f}K".format(F_desired*1e3, T_chamber)
+    str_save_file = str_folder + "optimization_results-F{:1.0f}mN-{:3.0f}K".format(F_desired*1e3, T_chamber)
     save_file = open(str_save_file+ ".npz", "wb")
     save_file_companion = open(str_save_file+ ".pkl", "wb")
 
@@ -175,51 +176,54 @@ if __name__ == "__main__":
     )
     save_file.close()
 
-    plt.figure()
-    plt.plot(channel_amount_range, P_total)
-    plt.title("Total power consumption")
-    plt.grid()
+    # plt.figure()
+    # plt.plot(channel_amount_range, P_total)
+    # plt.title("Total power consumption")
+    # plt.grid()
 
-    plt.figure()
-    plt.plot(channel_amount_range, pressure_drop*1e-5)
-    plt.title("pressure_drop")
-    plt.grid()
+    # plt.figure()
+    # plt.plot(channel_amount_range, pressure_drop*1e-5)
+    # plt.title("pressure_drop")
+    # plt.grid()
 
-    plt.figure()
-    plt.plot(channel_amount_range, T_wall_bottom)
-    plt.title("Bottom wall temperature")
-    plt.grid()
+    # plt.figure()
+    # plt.plot(channel_amount_range, T_wall_bottom)
+    # plt.title("Bottom wall temperature")
+    # plt.grid()
 
-    plt.figure()
-    plt.plot(channel_amount_range, T_wall)
-    plt.title("Top wall temperature")
-    plt.grid()
+    # plt.figure()
+    # plt.plot(channel_amount_range, T_wall)
+    # plt.title("Top wall temperature")
+    # plt.grid()
 
-    plt.figure()
-    plt.plot(channel_amount_range, w_channel*1e6)
-    plt.title("Channel width")
-    plt.grid()
+    # plt.figure()
+    # plt.plot(channel_amount_range, w_channel*1e6)
+    # plt.title("Channel width")
+    # plt.grid()
 
-    plt.figure()
-    plt.plot(channel_amount_range, l_channel*1e3)
-    plt.title("Channel length")
-    plt.grid()
+    # plt.figure()
+    # plt.plot(channel_amount_range, l_channel*1e3)
+    # plt.title("Channel length")
+    # plt.grid()
 
-    plt.figure()
-    plt.plot(channel_amount_range, w_channel_spacing*1e6)
-    plt.title("Channel spacing")
-    plt.grid()
+    # plt.figure()
+    # plt.plot(channel_amount_range, w_channel_spacing*1e6)
+    # plt.title("Channel spacing")
+    # plt.grid()
     
 
-    plt.figure()
-    plt.plot(channel_amount_range, M_channel_exit_after_dP)
-    plt.title("Mach")
-    plt.grid()
+    # plt.figure()
+    # plt.plot(channel_amount_range, M_channel_exit_after_dP)
+    # plt.title("Mach")
+    # plt.grid()
  
 
-    plt.figure()
-    plt.plot(channel_amount_range, Re_channel_exit_after_dP)
-    plt.title("Reynolds")
-    plt.grid()
+    # plt.figure()
+    # plt.plot(channel_amount_range, Re_channel_exit_after_dP)
+    # plt.title("Reynolds")
+    # plt.grid()
 
-    plt.show()
+    # plt.show()
+
+if __name__ == "__main__":
+    run()

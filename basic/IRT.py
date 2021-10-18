@@ -383,8 +383,8 @@ def engine_performance_from_F_and_T(F_desired, p_chamber, T_chamber, AR_exit, p_
         dict{A_throat [m^2], m_dot [kg/s]}: Throat area and mass flow
     """
     # Default range for temperature for root-finding algorithm
-    A_low = 1e-20 # [K]
-    A_high = 1e-4 # [K]
+    A_low = 1e-22 # [K]
+    A_high = 1e-3 # [K]
 
     R = fp.get_specific_gas_constant() # [J/(kg*K)]
     gamma = fp.get_specific_heat_ratio(T_chamber,p_chamber) # [-] Specific heat ratio
