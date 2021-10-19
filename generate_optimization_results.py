@@ -4,12 +4,12 @@ import math
 import numpy as np
 
 # Default values in case it is not run from command line
-F = 3e-3
-T_l= 925
-T_h = 1100
+F = 5e-3
+T_l= 500
+T_h = 575
 s = round((T_h-T_l)/25)+1
 
-str_f = "optimization_results-3mN/"
+str_f = "optimization_results-5mN/"
 
 def run(F_desired=F, T_low=T_l, T_high=T_h, steps=s, str_folder=str_f):
     print(s)

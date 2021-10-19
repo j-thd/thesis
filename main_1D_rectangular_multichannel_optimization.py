@@ -24,7 +24,7 @@ def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case 
     save_file_companion = open(str_save_file+ ".pkl", "wb")
 
     # Load all settings
-    channel_amount_range = np.arange(1,30)
+    channel_amount_range = np.arange(1,12)
     full_results = [] # List storing full results
     full_prepared_values = [] # List storing full prepared values
     P_total = np.zeros(len(channel_amount_range))

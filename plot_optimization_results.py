@@ -15,10 +15,10 @@ from models import one_D as oneD
 from thermo.prop import FluidProperties
 
 def run():
-    F_desired = 5e-3 # [mN] Thrust
-    T_chamber = 700 # [K] Chamber temperature
+    F_desired = 2e-3 # [mN] Thrust
+    T_chamber = 1000 # [K] Chamber temperature
 
-    file_name = "optimization_results-5mN/optimization_results-F{:1.0f}mN-{}K".format(F_desired*1e3,T_chamber)
+    file_name = "optimization_results-2mN/optimization_results-F{:1.0f}mN-{}K".format(F_desired*1e3,T_chamber)
     optimization_settings = optimization.settings.settings_1D_rectangular_multichannel # For the analysis of the answer
 
     npzfile = open(file_name+".npz", "rb")
