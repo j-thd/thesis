@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 
 def run():
     # Strings to point towards results for different thrust levels
-    str_1mN_folder = "optimization_results-1mN/"
-    str_2mN_folder = "optimization_results-2mN/"
-    str_3mN_folder = "optimization_results-3mN/"
-    str_4mN_folder = "optimization_results-4mN/"
-    str_5mN_folder = "optimization_results-5mN/"
+    str_1mN_folder = "optimization_results_SA_w_channel_10/optimization_results-1mN/"
+    str_2mN_folder = "optimization_results_SA_w_channel_10/optimization_results-2mN/"
+    str_3mN_folder = "optimization_results_SA_w_channel_10/optimization_results-3mN/"
+    str_4mN_folder = "optimization_results_SA_w_channel_10/optimization_results-4mN/"
+    str_5mN_folder = "optimization_results_SA_w_channel_10/optimization_results-5mN/"
     # Load data for different thrust levels
     d1 = load_data_in_folder(str_1mN_folder)
     d2 = load_data_in_folder(str_2mN_folder)
@@ -29,10 +29,10 @@ def run():
     # Some plots showing all thrust levels together
     #plotChannelNumbersVsIsp(dl)
     #plotTopWallSuperheatVsIsp(dl)
-    plotThroatWidthVsIsp(dl)
-    plotPressureDropVsIsp(dl)
-    #plotTotalPowerVsIsp(dl=dl)
-    #plotPowerLossVsIsp(dl=dl)
+    #plotThroatWidthVsIsp(dl)
+    #plotPressureDropVsIsp(dl)
+    plotTotalPowerVsIsp(dl=dl)
+    plotPowerLossVsIsp(dl=dl)
     # plotHeatingEfficiencyVsIsp(dl=dl)
     # plotChipAreaVsIsp(dl=dl)
 
@@ -60,7 +60,7 @@ def read_and_order_npz_data(npz_files):
     T_chamber = [] # Read and store T_chamber in here, so npz_data can be sorted based on that
 
     for f in npz_files:
-        #print(f)
+        print(f)
         npz_file = open(f, "rb")
         nd = np.load(npz_file)
         npz_data.append(nd)

@@ -15,16 +15,16 @@ from models import one_D as oneD
 from thermo.prop import FluidProperties
 
 def run():
-    F_desired = 2e-3 # [mN] Thrust
+    F_desired = 4e-3 # [mN] Thrust
     T_chamber = 1000 # [K] Chamber temperature
 
-    file_name = "optimization_results-2mN/optimization_results-F{:1.0f}mN-{}K".format(F_desired*1e3,T_chamber)
-    optimization_settings = optimization.settings.settings_1D_rectangular_multichannel # For the analysis of the answer
+    file_name = "optimization_results_SA_wchannel_10/optimization_results-4mN/optimization_results-F{:1.0f}mN-{}K".format(F_desired*1e3,T_chamber)
+    #optimization_settings = optimization.settings.settings_1D_rectangular_multichannel # For the analysis of the answer
 
     npzfile = open(file_name+".npz", "rb")
-    picklefile = open(file_name+".pkl", "rb")
+    #picklefile = open(file_name+".pkl", "rb")
     data = np.load(npzfile)
-    pickled_data = pickle.load(picklefile)
+    #pickled_data = pickle.load(picklefile)
     
 
 
@@ -184,7 +184,7 @@ def run():
 
     # Close files
     npzfile.close()
-    picklefile.close()
+    #picklefile.close()
 
 def plotChannelCharacteristics(channel_amount, pressure_drop, l_channel, w_throat_new, w_total, str_title, optimum_bounds, sens):
     fig, axs = plt.subplots(2,2)
@@ -207,7 +207,7 @@ def plotChannelCharacteristics(channel_amount, pressure_drop, l_channel, w_throa
     axs[1][1].set_xlabel("Number of channels $N_c$ [-]")
     axs[1][1].grid()
     plotOptimumBounds(optimum_bounds,sens, axs=axs[1][1])
-    fig.suptitle("Chip geometry for optimal design\nfor "+str_title)
+    fig.suptitle("Sensitivity analysis on channel width: $w_c\\geq 10 \\mu$m\nChip geometry for optimal design\nfor "+str_title)
     axs[0][0].legend()
     plt.tight_layout(pad=0.5)
 
@@ -235,7 +235,7 @@ def plotOptimumOutcome(channel_amount, P_loss, w_channel, w_channel_spacing, T_w
     axs[1][1].set_xlabel("Number of channels - $N_c$ [-]")
     axs[1][1].grid()
     plotOptimumBounds(optimum_bounds,sens,axs=axs[1][1])
-    fig.suptitle("Optimal outcome and design parameters \n for "+str_title)
+    fig.suptitle("Sensitivity analysis on channel width: $w_c\\geq 10 \\mu$m\nOptimal outcome and design parameters \n for "+str_title)
     axs[0][0].legend()
     plt.tight_layout(pad=0.5)
 

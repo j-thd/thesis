@@ -167,7 +167,8 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
     optimization_method = 'L-BFGS-B'
     optimization_options = {
         'ftol': 2.220446049250313e-20,
-        'gtol': 1e-10
+        'gtol': 1e-10,
+        'disp': True,
     }
 
     minimize_results = minimize(
@@ -183,8 +184,8 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
     res_final = f(minimize_results.x, return_full_results=True)
 
     optim_results = {
-        'full_res': res_final['res'],
-        'full_prepared_values': res_final['prepared_values'],
+        #'full_res': res_final['res'],
+        #'full_prepared_values': res_final['prepared_values'],
         'minimize_results': minimize_results,
         'w_channel': minimize_results.x[0],
         'w_channel_spacing': minimize_results.x[1],

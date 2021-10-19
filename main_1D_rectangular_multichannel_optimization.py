@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import timeit # To time speed of optmization
 
 import optimization
-import optimization.settings
+import optimization.settings_SA_w_channel_10
 
 F = 5e-3
 T = 1000
@@ -21,12 +21,12 @@ def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case 
 
     str_save_file = str_folder + "optimization_results-F{:1.0f}mN-{:3.0f}K".format(F_desired*1e3, T_chamber)
     save_file = open(str_save_file+ ".npz", "wb")
-    save_file_companion = open(str_save_file+ ".pkl", "wb")
+    #save_file_companion = open(str_save_file+ ".pkl", "wb")
 
     # Load all settings
-    channel_amount_range = np.arange(1,12)
-    full_results = [] # List storing full results
-    full_prepared_values = [] # List storing full prepared values
+    channel_amount_range = np.arange(1,25)
+    #full_results = [] # List storing full results
+    #full_prepared_values = [] # List storing full prepared values
     P_total = np.zeros(len(channel_amount_range))
     P_loss = np.zeros_like(P_total)
     P_ideal = np.zeros_like(P_total)
@@ -70,7 +70,7 @@ def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case 
     i_channel = np.nditer(channel_amount_range, flags=['c_index'])
     for i in i_channel:
         
-        settings = optimization.settings.settings_1D_rectangular_multichannel
+        settings = optimization.settings_SA_w_channel_10.settings_1D_rectangular_multichannel
         
         results = optimization.run(
             F_desired=F_desired,
@@ -88,8 +88,8 @@ def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case 
         print("- Channel spacing:       {:3.3f} micron".format(results['w_channel_spacing']*1e6))
         print("- Top wall temperature:  {:3.2f} K".format(results['T_wall_top']))
 
-        full_results.append(results['full_res'])
-        full_prepared_values.append(results['full_prepared_values'])
+        #full_results.append(results['full_res'])
+        #full_prepared_values.append(results['full_prepared_values'])
 
         P_total[i_channel.index] = results['P_total']
         P_loss[i_channel.index] = results['P_loss']
@@ -130,9 +130,9 @@ def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case 
     print("Time elapsed: {} seconds".format(stop-start))
     
     # Save full-results and full prepared values
-    full_dict = {'res': full_results, 'prepared_values': full_prepared_values}
-    pickle.dump(full_dict, save_file_companion)
-    save_file_companion.close()
+    #full_dict = {'res': full_results, 'prepared_values': full_prepared_values}
+    #pickle.dump(full_dict, save_file_companion)
+    #save_file_companion.close()
     
     # Save overall results
     np.savez(save_file,
