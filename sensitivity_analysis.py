@@ -1,17 +1,50 @@
+# File to compare differences between optimization with different settings
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-SA_string_wc_10_micron = "\n(Sensitivity analysis on channel width:  $w_c \\geq 10 \\mu$m)"
-SA_string = ""#SA_string_wc_10_micron
+SA_string_sc_25_micron = "\n(Sensitivity analysis on channel spacing:  $s_c \\geq 25$ $\\mu$m)"
+SA_string_wc_10_micron = "\n(Sensitivity analysis on channel width:  $w_c \\geq 10$ $\\mu$m)"
+SA_string_AR_5 = "\n(Sensitivity analysis on exit area ratio:  $\\frac{{A_e}}{{A_t}} =5$)"
+SA_string_AR_15 = "\n(Sensitivity analysis on exit area ratio:  $\\frac{{A_e}}{{A_t}} =15$)"
+SA_string = SA_string_AR_15
 
 def run():
+    ## Load results of sensitivity analysis
+    # # Strings to point towards results for different thrust levels
+    # str_1mN_folder_SA = "optimization_results_SA_AR5/optimization_results-1mN/"
+    # str_2mN_folder_SA = "optimization_results_SA_AR5/optimization_results-2mN/"
+    # str_3mN_folder_SA = "optimization_results_SA_AR5/optimization_results-3mN/"
+    # str_4mN_folder_SA = "optimization_results_SA_AR5/optimization_results-4mN/"
+    # str_5mN_folder_SA = "optimization_results_SA_AR5/optimization_results-5mN/"
+    str_1mN_folder_SA = "optimization_results_SA_AR15/optimization_results-1mN/"
+    str_2mN_folder_SA = "optimization_results_SA_AR15/optimization_results-2mN/"
+    str_3mN_folder_SA = "optimization_results_SA_AR15/optimization_results-3mN/"
+    str_4mN_folder_SA = "optimization_results_SA_AR15/optimization_results-4mN/"
+    str_5mN_folder_SA = "optimization_results_SA_AR15/optimization_results-5mN/"
+    # str_1mN_folder_SA = "optimization_results_SA_w_channel_spacing_25/optimization_results-1mN/"
+    # str_2mN_folder_SA = "optimization_results_SA_w_channel_spacing_25/optimization_results-2mN/"
+    # str_3mN_folder_SA = "optimization_results_SA_w_channel_spacing_25/optimization_results-3mN/"
+    # str_4mN_folder_SA = "optimization_results_SA_w_channel_spacing_25/optimization_results-4mN/"
+    # str_5mN_folder_SA = "optimization_results_SA_w_channel_spacing_25/optimization_results-5mN/"
     # Strings to point towards results for different thrust levels
-    # str_1mN_folder = "optimization_results_SA_w_channel_spacing_25/optimization_results-1mN/"
-    # str_2mN_folder = "optimization_results_SA_w_channel_spacing_25/optimization_results-2mN/"
-    # str_3mN_folder = "optimization_results_SA_w_channel_spacing_25/optimization_results-3mN/"
-    # str_4mN_folder = "optimization_results_SA_w_channel_spacing_25/optimization_results-4mN/"
-    # str_5mN_folder = "optimization_results_SA_w_channel_spacing_25/optimization_results-5mN/"
+    # str_1mN_folder_SA = "optimization_results_SA_w_channel_10/optimization_results-1mN/"
+    # str_2mN_folder_SA = "optimization_results_SA_w_channel_10/optimization_results-2mN/"
+    # str_3mN_folder_SA = "optimization_results_SA_w_channel_10/optimization_results-3mN/"
+    # str_4mN_folder_SA = "optimization_results_SA_w_channel_10/optimization_results-4mN/"
+    # str_5mN_folder_SA = "optimization_results_SA_w_channel_10/optimization_results-5mN/"
+    # Load data for different thrust levels
+    d1_SA = load_data_in_folder(str_1mN_folder_SA)
+    d2_SA = load_data_in_folder(str_2mN_folder_SA)
+    d3_SA = load_data_in_folder(str_3mN_folder_SA)
+    d4_SA = load_data_in_folder(str_4mN_folder_SA)
+    d5_SA = load_data_in_folder(str_5mN_folder_SA)
+    # Make into a data list, to iterate over when plotting results
+    dl_SA = [d1_SA, d2_SA, d3_SA, d4_SA, d5_SA]
+
+    ## Load original results
+    # Strings to point towards results for different thrust levels
     str_1mN_folder = "optimization_results-1mN/"
     str_2mN_folder = "optimization_results-2mN/"
     str_3mN_folder = "optimization_results-3mN/"
@@ -26,23 +59,29 @@ def run():
     # Make into a data list, to iterate over when plotting results
     dl = [d1, d2, d3, d4, d5]
 
+
+    
+
     # Some plots to highlight lose results for one thrust level
-    dh=d2
-    plotIspVsPower(dh)
-    plotOptimalDesign(dh)
-    plotThroatPressureResults(dh)
-    plotHighLevelStuff(dh)
+    dh=d4_SA
+    #plotIspVsPower(dh)
+    #plotOptimalDesign(dh)
+    #plotThroatPressureResults(dh)
+    #plotHighLevelStuff(dh)
     #plotMassFlowAndIsp(dh)
     # Some plots showing all thrust levels together
-    plotChannelNumbersVsIsp(dl)
-    plotChannelWidthVsIsp(dl)
-    plotTopWallSuperheatVsIsp(dl)
+    plotChannelNumbersVsIsp(dl_SA)
+    plotChannelWidthVsIsp(dl_SA)
+    plotChannelSpacingVsIsp(dl_SA)
+    plotTopWallSuperheatVsIsp(dl_SA)
     #plotThroatWidthVsIsp(dl)
     #plotPressureDropVsIsp(dl)
-    plotTotalPowerVsIsp(dl=dl)
-    plotPowerLossVsIsp(dl=dl)
-    plotHeatingEfficiencyVsIsp(dl=dl)
+    plotTotalPowerVsIsp(dl=dl_SA)
+    #plotPowerLossVsIsp(dl=dl_SA)
+    #plotHeatingEfficiencyVsIsp(dl=dl_SA)
     # plotChipAreaVsIsp(dl=dl)
+    plotRelativePowerLoss(dl, dl_SA)
+    plotAbsolutePowerLossDifference(dl, dl_SA)
 
     plt.show()
 
@@ -50,6 +89,7 @@ def load_data_in_folder(str_folder):
     npz_files = discover_npz_files(str_folder) # Finds all npz files in the folder
     npz_data = read_and_order_npz_data(npz_files) # Files are ordered by chamber temperature
     data = process_data(npz_data) # From each file only the optimum design must be extracted for each temperature
+    print("Data points in "+str_folder + ": {}".format(len(npz_data)))
 
     return data # Return the data of each optimum associated with a thrust and chamber temperature
 
@@ -159,22 +199,40 @@ def process_data(npz_data):
         'A_chip': A_chip,
     }
 
+def plotRelativePowerLoss(dl, dl_SA):
+    plt.figure()
+    for data, data_SA in zip(dl, dl_SA):
+        print (data['T_chamber'])
+        print (data_SA['T_chamber'])
+        #print(data['P_total'])
+        #print(data_SA['P_total'])
+        plt.plot(data['Isp'], 1-data_SA['P_total']/data['P_total'], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
+        #plt.plot(data_SA['Isp'], data_SA['P_total'], label="{:1.0f} mN".format(data_SA['F_desired'][0]*1e3), linestyle='dashed')
+    plt.xlabel("Specific impulse - $I_{{sp}}$ [s]")
+    plt.ylabel("Relative reduction in $P_t$ - $1-\\frac{{P_{{t,new}}}}{{P_{{t,old}}}}$ [-]")
+    plt.grid()
+    plt.legend(title="Thrust")
+    plt.title("Relative reduction in total power consumption\nfor given thrust and specific impulse"+SA_string)
+    plt.tight_layout()
+
+def plotAbsolutePowerLossDifference(dl, dl_SA):
+    plt.figure()
+    for data, data_SA in zip(dl, dl_SA):
+        plt.plot(data['Isp'], data['P_total']-data_SA['P_total'], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
+        #plt.plot(data_SA['Isp'], data_SA['P_total'], label="{:1.0f} mN".format(data_SA['F_desired'][0]*1e3), linestyle='dashed')
+    plt.xlabel("Specific impulse - $I_{{sp}}$ [s]")
+    plt.ylabel("Power loss difference - $P_{{t,old}}-P_{{t,new}}$ [W]")
+    plt.grid()
+    plt.legend(title="Thrust")
+    plt.title("Absolute power loss difference for given thrust and specific impulse"+SA_string)
+    plt.tight_layout()
+
+
 def plotTotalPowerVsIsp(dl):
     plt.figure()
     for data in dl:
         plt.plot(data['Isp'], data['P_total'], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
     plt.xlabel("Specific impulse - $I_{{sp}}$ [s]")
-    plt.ylabel("Total power consumption - $P_t$ [W]")
-    plt.grid()
-    plt.legend(title="Thrust")
-    plt.title("Total power consumption for given thrust and specific impulse"+SA_string)
-    plt.tight_layout()
-
-def plotTotalPowerVsChamberTemperature(dl):
-    plt.figure()
-    for data in dl:
-        plt.plot(data['T_chamber'], data['P_total'], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
-    plt.xlabel("Chamber Temperature - $T_c$ [K]")
     plt.ylabel("Total power consumption - $P_t$ [W]")
     plt.grid()
     plt.legend(title="Thrust")
@@ -235,6 +293,17 @@ def plotChannelWidthVsIsp(dl):
     plt.grid()
     plt.legend(title="Thrust")
     plt.title("Optimal channel width for given thrust and specific impulse"+SA_string)
+    plt.tight_layout()
+
+def plotChannelSpacingVsIsp(dl):
+    plt.figure()
+    for data in dl:
+        plt.plot(data['Isp'], data['w_channel_spacing']*1e6, label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
+    plt.xlabel("Specific impulse - $I_{{sp}}$ [s]")
+    plt.ylabel("Channel spacing - $s_c$ [$\\mu$m]")
+    plt.grid()
+    plt.legend(title="Thrust")
+    plt.title("Optimal channel spacing for given thrust and specific impulse"+SA_string)
     plt.tight_layout()
 
 def plotTopWallSuperheatVsIsp(dl):

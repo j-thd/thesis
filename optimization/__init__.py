@@ -6,7 +6,7 @@ from basic import IRT
 from basic import chamber
 from models.optimization_1D import optim_P_total
 from models import one_D as oneD
-from scipy.optimize import minimize, Bounds, fmin_l_bfgs_b
+from scipy.optimize import minimize, Bounds, fmin_l_bfgs_b, NonlinearConstraint
 
 def run(F_desired,T_chamber, channel_amount, settings, x_guess):
     """ Algorithm to determine the thruster with the best specific impulse for the given thrust and power requirements
@@ -96,14 +96,18 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
     x0 = None # Set the first guess based on a guess being provided or not
     if (x_guess is None):
         x0 = [ 
-            settings['bounds']['w_channel'][1],
-            settings['bounds']['w_channel_spacing'][1],
-            settings['bounds']['T_wall_superheat'][1] + T_chamber,
+            settings['bounds']['w_channel'][0],
+            settings['bounds']['w_channel_spacing'][0],
+            settings['bounds']['T_wall_superheat'][0] + T_chamber,
             ]
     else:
         x0 = x_guess
+
+    
     # The function to optimize
     def f(x, return_full_results=False): #  NOTE: change bounds above if argument change
+        if(return_full_results):
+            print("Going to return full results.")
         w_channel = x[0]
         w_channel_spacing = x[1]
         T_wall = x[2]
@@ -152,11 +156,16 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
             # Punish the objective function by outputting high power consumptions for invalid solutions
             # The punishment must however not be constant, or it will converge at the boundary where it is invalid.
             # Since the punishment stems from the pressure drop being higher than the initial p_chamber value, the lower the negative final pressure is the higher the punishment
+            if return_full_results:
+                print("Converged on invalid result!")
+                print(res_P['pressure_drop_punishment'])
             return (P_ideal*(2+1*res_P['pressure_drop_punishment']))*settings['function_scaling']
         else:
             #print("P_total: {:2.5f} W".format(P_total))
             # Scipy minimize can't handle multiple returns for the objective function, so the extensive final results must be pulled out afterwards
             if return_full_results:
+                print("Returning full results!")
+                print(res_P['P_loss'])
                 return res_P
             else:
                 return P_total*settings['function_scaling']
@@ -168,8 +177,11 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
     optimization_options = {
         'ftol': 2.220446049250313e-20,
         'gtol': 1e-10,
-        'disp': True,
+        'disp': False,
     }
+
+    # Pressure drop constraint
+    con_pressure_drop = NonlinearConstraint(f, 0, 2*P_ideal)
 
     minimize_results = minimize(
         fun=f,
@@ -180,8 +192,14 @@ def run(F_desired,T_chamber, channel_amount, settings, x_guess):
         )
 
     # 
-
+    print(minimize_results.x)
+    print(minimize_results.success)
+    print(minimize_results.status)
+    print(minimize_results.message)
+    print(minimize_results.nit)
+    print("Trying to return full results")
     res_final = f(minimize_results.x, return_full_results=True)
+    print(res_final['P_loss'])
 
     optim_results = {
         #'full_res': res_final['res'],

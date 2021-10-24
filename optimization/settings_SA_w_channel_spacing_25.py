@@ -33,10 +33,10 @@ settings_1D_rectangular_multichannel['FDP'] = {
 }
 ## BOUNDARIES ON DESIGN SPACE
 settings_1D_rectangular_multichannel['bounds'] = {
-    'w_channel_spacing': (50e-6,500e-6),
+    'w_channel_spacing': (25e-6,500e-6),
     'channel_amount': (1,25),
     'w_channel': (20e-6, 1e-3),
-    'T_wall_superheat': (1, 500),           # [K] Wall temperature range (T_wall = T_chamber + T_wall_superheat)
+    'T_wall_superheat': (1, 250),           # [K] Wall temperature range (T_wall = T_chamber + T_wall_superheat)
 }
 ## HEAT TRANSFER RELATIONS IN DIFFERENT SECTIONS OF THE CHANNEL
 settings_1D_rectangular_multichannel['Nusselt_relations'] = {
