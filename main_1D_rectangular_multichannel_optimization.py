@@ -6,14 +6,15 @@ from matplotlib import pyplot as plt
 import timeit # To time speed of optmization
 
 import optimization
+import optimization.Settings_Cen
 #import optimization.settings
 #import optimization.settings_SA_w_channel_10
-import optimization.settings_SA_AR_5
+#import optimization.settings_SA_AR_5
 #import optimization.settings_SA_w_channel_spacing_25
 
-F = 2e-3
-T = 925
-str_f= "optimization_results-2mN/"
+F = 7.71e-3
+T = 557.80
+str_f= "optimization-results-Cen/"
 
 
 def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case it is run as main
@@ -27,7 +28,7 @@ def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case 
     #save_file_companion = open(str_save_file+ ".pkl", "wb")
 
     # Load all settings
-    channel_amount_range = np.arange(3,14)
+    channel_amount_range = np.arange(1,50)
     #full_results = [] # List storing full results
     #full_prepared_values = [] # List storing full prepared values
     P_total = np.zeros(len(channel_amount_range))
@@ -73,7 +74,7 @@ def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case 
     i_channel = np.nditer(channel_amount_range, flags=['c_index'])
     for i in i_channel:
         
-        settings = optimization.settings_SA_AR_5.settings_1D_rectangular_multichannel
+        settings = optimization.Settings_Cen.settings_1D_rectangular_multichannel
         
         results = optimization.run(
             F_desired=F_desired,

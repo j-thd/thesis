@@ -8,21 +8,21 @@ SA_string_sc_25_micron = "\n(Sensitivity analysis on channel spacing:  $s_c \\ge
 SA_string_wc_10_micron = "\n(Sensitivity analysis on channel width:  $w_c \\geq 10$ $\\mu$m)"
 SA_string_AR_5 = "\n(Sensitivity analysis on exit area ratio:  $\\frac{{A_e}}{{A_t}} =5$)"
 SA_string_AR_15 = "\n(Sensitivity analysis on exit area ratio:  $\\frac{{A_e}}{{A_t}} =15$)"
-SA_string = SA_string_AR_15
+SA_string = SA_string_AR_5
 
 def run():
     ## Load results of sensitivity analysis
     # # Strings to point towards results for different thrust levels
-    # str_1mN_folder_SA = "optimization_results_SA_AR5/optimization_results-1mN/"
-    # str_2mN_folder_SA = "optimization_results_SA_AR5/optimization_results-2mN/"
-    # str_3mN_folder_SA = "optimization_results_SA_AR5/optimization_results-3mN/"
-    # str_4mN_folder_SA = "optimization_results_SA_AR5/optimization_results-4mN/"
-    # str_5mN_folder_SA = "optimization_results_SA_AR5/optimization_results-5mN/"
-    str_1mN_folder_SA = "optimization_results_SA_AR15/optimization_results-1mN/"
-    str_2mN_folder_SA = "optimization_results_SA_AR15/optimization_results-2mN/"
-    str_3mN_folder_SA = "optimization_results_SA_AR15/optimization_results-3mN/"
-    str_4mN_folder_SA = "optimization_results_SA_AR15/optimization_results-4mN/"
-    str_5mN_folder_SA = "optimization_results_SA_AR15/optimization_results-5mN/"
+    str_1mN_folder_SA = "optimization_results_SA_AR5/optimization_results-1mN/"
+    str_2mN_folder_SA = "optimization_results_SA_AR5/optimization_results-2mN/"
+    str_3mN_folder_SA = "optimization_results_SA_AR5/optimization_results-3mN/"
+    str_4mN_folder_SA = "optimization_results_SA_AR5/optimization_results-4mN/"
+    str_5mN_folder_SA = "optimization_results_SA_AR5/optimization_results-5mN/"
+    # str_1mN_folder_SA = "optimization_results_SA_AR15/optimization_results-1mN/"
+    # str_2mN_folder_SA = "optimization_results_SA_AR15/optimization_results-2mN/"
+    # str_3mN_folder_SA = "optimization_results_SA_AR15/optimization_results-3mN/"
+    # str_4mN_folder_SA = "optimization_results_SA_AR15/optimization_results-4mN/"
+    # str_5mN_folder_SA = "optimization_results_SA_AR15/optimization_results-5mN/"
     # str_1mN_folder_SA = "optimization_results_SA_w_channel_spacing_25/optimization_results-1mN/"
     # str_2mN_folder_SA = "optimization_results_SA_w_channel_spacing_25/optimization_results-2mN/"
     # str_3mN_folder_SA = "optimization_results_SA_w_channel_spacing_25/optimization_results-3mN/"
@@ -70,13 +70,15 @@ def run():
     #plotHighLevelStuff(dh)
     #plotMassFlowAndIsp(dh)
     # Some plots showing all thrust levels together
-    plotChannelNumbersVsIsp(dl_SA)
-    plotChannelWidthVsIsp(dl_SA)
-    plotChannelSpacingVsIsp(dl_SA)
-    plotTopWallSuperheatVsIsp(dl_SA)
+    #plotChannelNumbersVsIsp(dl_SA)
+    #plotChannelWidthVsIsp(dl_SA)
+    #plotChannelSpacingVsIsp(dl_SA)
+    #plotTopWallSuperheatVsIsp(dl_SA)
+    #plotTopBottomTemperatureDifference(dl_SA)
+    #plotRelativeEffectiveWallTemperature(dl_SA)
     #plotThroatWidthVsIsp(dl)
     #plotPressureDropVsIsp(dl)
-    plotTotalPowerVsIsp(dl=dl_SA)
+    #plotTotalPowerVsIsp(dl=dl_SA)
     #plotPowerLossVsIsp(dl=dl_SA)
     #plotHeatingEfficiencyVsIsp(dl=dl_SA)
     # plotChipAreaVsIsp(dl=dl)
@@ -147,6 +149,7 @@ def process_data(npz_data):
     l_channel = np.zeros_like(T_chamber)
     l_total = np.zeros_like(T_chamber)
     A_chip = np.zeros_like(T_chamber)
+    T_wall_bottom = np.zeros_like(T_chamber)
 
     T_iter = np.nditer(T_chamber, flags=['c_index'])
 
@@ -176,6 +179,7 @@ def process_data(npz_data):
         l_channel[i] = d['l_channel'][id]
         l_total[i] = d['l_total'][id]
         A_chip[i] = d['A_chip'][id]
+        T_wall_bottom[i] = d['T_wall_bottom'][id]
 
     return {
         'F_desired': F_desired,
@@ -197,16 +201,18 @@ def process_data(npz_data):
         'l_channel': l_channel,
         'l_total': l_total,
         'A_chip': A_chip,
+        'T_wall_bottom': T_wall_bottom,
     }
 
 def plotRelativePowerLoss(dl, dl_SA):
     plt.figure()
     for data, data_SA in zip(dl, dl_SA):
-        print (data['T_chamber'])
-        print (data_SA['T_chamber'])
+        t = 4
+        # Interpolate specific impulses
+        P_total_interp = np.interp(data['Isp'], data_SA['Isp'], data_SA['P_total']) # [W] Map power consumption to new Isp values
         #print(data['P_total'])
         #print(data_SA['P_total'])
-        plt.plot(data['Isp'], 1-data_SA['P_total']/data['P_total'], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
+        plt.plot(data['Isp'][:-t], 1-P_total_interp[:-t]/data['P_total'][:-t], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
         #plt.plot(data_SA['Isp'], data_SA['P_total'], label="{:1.0f} mN".format(data_SA['F_desired'][0]*1e3), linestyle='dashed')
     plt.xlabel("Specific impulse - $I_{{sp}}$ [s]")
     plt.ylabel("Relative reduction in $P_t$ - $1-\\frac{{P_{{t,new}}}}{{P_{{t,old}}}}$ [-]")
@@ -218,7 +224,10 @@ def plotRelativePowerLoss(dl, dl_SA):
 def plotAbsolutePowerLossDifference(dl, dl_SA):
     plt.figure()
     for data, data_SA in zip(dl, dl_SA):
-        plt.plot(data['Isp'], data['P_total']-data_SA['P_total'], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
+        t=4
+        P_total_interp = np.interp(data['Isp'], data_SA['Isp'], data_SA['P_total']) # [W] Map power consumption to new Isp values
+        #P_total_interp = np.interp(data_SA['Isp'], data['Isp'], data['P_total'])
+        plt.plot(data['Isp'][:-t], data['P_total'][:-t]-P_total_interp[:-t], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
         #plt.plot(data_SA['Isp'], data_SA['P_total'], label="{:1.0f} mN".format(data_SA['F_desired'][0]*1e3), linestyle='dashed')
     plt.xlabel("Specific impulse - $I_{{sp}}$ [s]")
     plt.ylabel("Power loss difference - $P_{{t,old}}-P_{{t,new}}$ [W]")
@@ -315,6 +324,32 @@ def plotTopWallSuperheatVsIsp(dl):
     plt.grid()
     plt.legend(title="Thrust")
     plt.title("Optimal top wall superheat for given thrust and specific impulse"+SA_string)
+    plt.tight_layout()
+
+def plotTopBottomTemperatureDifference(dl):
+    plt.figure()
+    for data in dl:
+        plt.plot(data['Isp'], data['T_wall']-data['T_wall_bottom'], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
+    plt.xlabel("Specific impulse - $I_{{sp}}$ [s]")
+    plt.ylabel("Top wall / bottom wall difference ($T_{{w}} -T_{{w,b}}$) [K]")
+    plt.grid()
+    plt.legend(title="Thrust")
+    plt.title("Optimal top wall superheat for given thrust and specific impulse"+SA_string)
+    plt.tight_layout()
+
+def plotRelativeEffectiveWallTemperature(dl):
+    
+
+    plt.figure()
+    for data in dl:
+        T_effective = (data['T_wall']+data['T_wall_bottom'])/2-data['T_chamber']
+        T_top_superheat = data['T_wall']-data['T_chamber']
+        plt.plot(data['Isp'], T_effective/T_top_superheat, label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
+    plt.xlabel("Specific impulse - $I_{{sp}}$ [s]")
+    plt.ylabel("Effective/top wall superheat ratio - $\\frac{{T_{{w,effective}}-T_c}}{{T_{{w}}-T_c}}$ [-]")
+    plt.grid()
+    plt.legend(title="Thrust")
+    plt.title("Relative effective top wall superheat\n for given thrust and specific impulse")
     plt.tight_layout()
 
 def plotHeatingEfficiencyVsIsp(dl):
