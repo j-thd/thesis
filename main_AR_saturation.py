@@ -27,7 +27,7 @@ def plot_condensation_curve(AR_min, AR_max, p_c, fp, T_ref):
 
     AR = IRT.area_ratio(M=M_exit, gamma=gamma) # [-] Area ratios corresponding to all specified mach numbers
 
-    plt.plot(AR, T_chamber, label ="{:2.0f} bar , $T_c={:3.0f}$ K, $\\gamma={:1.2f}$".format(p_c*1e-5,T_ref,gamma))
+    plt.plot(AR, T_chamber, label ="$p_c ={:2.0f}$ bar , $T_c={:3.0f}$ K, $\\gamma={:1.3f}$".format(p_c*1e-5,T_ref,gamma))
 
 def plot_pressure_curve(AR_min, AR_max, p_c, fp, T_ref):
     gamma = fp.get_specific_heat_ratio(T=T_ref,p=p_c) # [-] Specific heat ratio
@@ -73,54 +73,55 @@ def run():
     AR_max = 100 # [-] Maximum exit area ratio to consider
     AR_min = 5 # [-] Minimum exit area ratio to consider
     fp = FluidProperties("HEOS::Water") # Object to retrieve fluid properties from
+    p_c = 3e5 # [Pa] Chamber pressure is important because it determines the saturation pressure at the exit
+    T_ref = 473 # [K] Arbitrary choice, must be varied to check effect on results
+    plot_condensation_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
+    T_ref = 573 # [K] Arbitrary choice, must be varied to check effect on results
+    plot_condensation_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
+    T_ref = 673
+    plot_condensation_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
     p_c = 5e5 # [Pa] Chamber pressure is important because it determines the saturation pressure at the exit
-    T_ref = 600 # [K] Arbitrary choice, must be varied to check effect on results
+    T_ref = 473 # [K] Arbitrary choice, must be varied to check effect on results
     plot_condensation_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
-    T_ref = 800 # [K] Arbitrary choice, must be varied to check effect on results
-    plot_condensation_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
-    T_ref = 1000
-    plot_condensation_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
-    p_c = 10e5 # [Pa] Chamber pressure is important because it determines the saturation pressure at the exit
-    T_ref = 600 # [K] Arbitrary choice, must be varied to check effect on results
-    plot_condensation_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
-    T_ref = 800
-    plot_condensation_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
-    T_ref = 1000
-    plot_condensation_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
+    # T_ref = 800
+    # plot_condensation_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
+    # T_ref = 1000
+    # plot_condensation_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
     plt.grid()
-    plt.title("Minimum chamber temperature to prevent condensation")
+    plt.title("Minimum chamber temperature to prevent condensation 2")
     plt.xlabel("Exit area ratio $\\frac{{A_e}}{{A_t}}$ [-]")
     plt.ylabel("Chamber temperature $T_c$ [K]")
+    plt.tight_layout()
     plt.legend()
     
 
-    fig = plt.figure()
-    p_c = 5e5
-    T_ref = 600
-    plot_pressure_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
-    T_ref = 800
-    plot_pressure_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
-    T_ref = 1000
-    plot_pressure_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
-    plt.grid()
-    plt.title("Exit pressure with varying area ratio")
-    plt.xlabel("Exit area ratio $\\frac{{A_e}}{{A_t}}$ [-]")
-    plt.ylabel("Exit pressure $p_e$ [bar]")
-    plt.legend()
+    # fig = plt.figure()
+    # p_c = 5e5
+    # T_ref = 600
+    # plot_pressure_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
+    # T_ref = 800
+    # plot_pressure_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
+    # T_ref = 1000
+    # plot_pressure_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
+    # plt.grid()
+    # plt.title("Exit pressure with varying area ratio")
+    # plt.xlabel("Exit area ratio $\\frac{{A_e}}{{A_t}}$ [-]")
+    # plt.ylabel("Exit pressure $p_e$ [bar]")
+    # plt.legend()
 
-    fig = plt.figure()
-    p_c = 5e5
-    T_ref = 600
-    plot_TR_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
-    T_ref = 800
-    plot_TR_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
-    T_ref = 1000
-    plot_TR_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
-    plt.grid()
-    plt.title("Temperature ratio with varying area ratio")
-    plt.xlabel("Exit area ratio $\\frac{{A_e}}{{A_t}}$ [-]")
-    plt.ylabel("Temperature ratio [-]")
-    plt.legend()
+    # fig = plt.figure()
+    # p_c = 5e5
+    # T_ref = 600
+    # plot_TR_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
+    # T_ref = 800
+    # plot_TR_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
+    # T_ref = 1000
+    # plot_TR_curve(AR_min=AR_min, AR_max=AR_max, p_c=p_c, fp=fp, T_ref=T_ref)
+    # plt.grid()
+    # plt.title("Temperature ratio with varying area ratio")
+    # plt.xlabel("Exit area ratio $\\frac{{A_e}}{{A_t}}$ [-]")
+    # plt.ylabel("Temperature ratio [-]")
+    # plt.legend()
     
     plt.show()
 

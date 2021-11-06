@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 import optimization
 import optimization.settings
+import optimization.Settings_Cen
 from basic import IRT
 from basic import chamber
 from models.optimization_1D import optim_P_total
@@ -21,7 +22,7 @@ def run():
     #file_name = "optimization_results_SA_w_channel_spacing_25/optimization_results-5mN/optimization_results-F{:1.0f}mN-{}K".format(F_desired*1e3,T_chamber)
     #file_name = "optimization_results-1mN/optimization_results-F{:1.0f}mN-{}K".format(F_desired*1e3,T_chamber)
     file_name = "optimization-results-Cen/optimization_results-F{:1.0f}mN-{:3.0f}K".format(F_desired*1e3,T_chamber)
-    #optimization_settings = optimization.settings.settings_1D_rectangular_multichannel # For the analysis of the answer
+    optimization_settings = optimization.Settings_Cen.settings_1D_rectangular_multichannel # For the analysis of the answer
 
     npzfile = open(file_name+".npz", "rb")
     #picklefile = open(file_name+".pkl", "rb")
@@ -176,7 +177,7 @@ def run():
 
     #plotPressureDropVsThroatReynolds(pressure_drop=data['pressure_drop'], Re_throat=data['Re_throat_new'], str_title=str_title, optimum_bounds=optimum_bounds, sens=sensitivity)
 
-    #analyze_best_result(id=id,data=data,settings=optimization_settings, str_title=str_title)
+    analyze_best_result(id=id,data=data,settings=optimization_settings, str_title=str_title)
 
     #monte_carlo_guess(id=id, data=data,settings=optimization_settings, str_title=str_title)
 

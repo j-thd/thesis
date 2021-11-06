@@ -24,7 +24,7 @@ settings_1D_rectangular_multichannel['FDP'] = {
     'inlet_manifold_width_factor' : 5.5,            # [-] Multiplication factor (with channel width to determine margin in chamber)
     'l_exit_manifold' : 0,                          # [m] Length between the end of multiple channels and start of convergent nozzle
     'convergent_half_angle'  : math.radians(45),    # [rad] Half-angle of the convergent part of the nozzle
-    'divergent_half_angle' : math.radians(22.5),    # [rad] Half-angle of divergent part of the nozzle
+    'divergent_half_angle' : math.radians(15),    # [rad] Half-angle of divergent part of the nozzle
     'w_outer_margin' : 1.560e-3,                        # [m] Margin around the outer channels for structural integrity
     'emissivity_chip_top' : 0.7,                    # [-] Emissivity of chip at top-side
     'emissivity_chip_bottom' : 0.7,                 # [-] Emissivity of chip at bottom-side
