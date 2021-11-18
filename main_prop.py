@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 from thermo.prop import FluidProperties
 
 def run():
-    plotSaturationCurve()
-    plotGammaCurve()
-    plt.show()
+    printBasicStuff()
+    # plotSaturationCurve()
+    # plotGammaCurve()
+    # plt.show()
 
 def plotSaturationCurve():
     fp = FluidProperties("water")
@@ -54,7 +55,9 @@ def plotGammaCurve():
     
 
 
-    
+def printBasicStuff():
+    fp = FluidProperties("water")
+    print("R: {:3.2f} J/(kg*K)".format(fp.get_specific_gas_constant()))
 
     
 

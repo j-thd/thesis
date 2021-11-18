@@ -3,6 +3,7 @@ from basic.chamber import wetted_perimeter_rectangular
 import numpy as np
 from thermo.prop import FluidProperties
 import models.zero_D as zD
+import basic.IRT as IRT
 import matplotlib.pyplot as plt
 
 
@@ -32,12 +33,12 @@ else:
     T_inlet = 300 # [K] Inlet temperature, used as assumption to calculate ideal power needed for heater
     p_chamber = 5e5 # [Pa] chamber pressure
     p_back = 0 # [Pa] expanded into vacuum
-    AR_exit = np.array([10, 20, 30, 40, 50]) # [-] Range of area ratios to go over
-    F = 4e-3 # [mN] Desired thrust
+    AR_exit = np.array([5, 10, 15]) # [-] Range of area ratios to go over
+    F = 1e-3 # [mN] Desired thrust
 
     # Range of temperatures to go over
-    T_chamber_min = 450 # [K]
-    T_chamber_max = 2000 # [K]
+    T_chamber_min = 500 # [K]
+    T_chamber_max = 1100 # [K]
     dT = (T_chamber_max - T_chamber_min)/50 # [K]
     T_chamber = np.arange(start=T_chamber_min, stop=T_chamber_max+dT/2, step=dT) # [K] Temperature range to plot (dT/2 added to include max in range)
 
@@ -66,7 +67,7 @@ for AR in it_AR:
     it_T = np.nditer(T_chamber, flags=['c_index'])
     for T in it_T:
         # Store mass flow, throat area and other results
-        ep = zD.engine_performance_from_F_and_T(F_desired=F, p_chamber=p_chamber,T_chamber=float(T), AR_exit=float(AR),p_back=p_back, fp=fp)
+        ep = IRT.engine_performance_from_F_and_T(F_desired=F, p_chamber=p_chamber,T_chamber=float(T), AR_exit=float(AR),p_back=p_back, fp=fp)
         m_dot[it_AR.index][it_T.index] = ep['m_dot'] # [kg/s] Mass flow
         A_throat[it_AR.index][it_T.index] = ep['A_throat'] # [m^2] Throat area
         Isp[it_AR.index][it_T.index] = ep['Isp'] # [s] Specific impulse
@@ -173,6 +174,7 @@ plt.legend(title="Exit area ratio")
 plt.title("Ideal power consumption of thruster ({:1.1f} mN, {:1.0f} bar)".format(F*1e3,p_chamber*1e-5))
 plt.xlabel("Chamber temperature $T_c$ [K]")
 plt.ylabel("$P_{t,ideal}$ [W]")
+plt.tight_layout()
 
 
 

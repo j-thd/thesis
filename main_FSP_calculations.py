@@ -10,11 +10,12 @@ fp = FluidProperties("HEOS::Water")
 
 # Assumed inputs
 T_inlet = 300 # [K]
-T_outlet = 450 # [K]
-p_inlet = 5e5 # [Pa]
+T_outlet = 424.03 # [K]
+p_inlet = 4.8e5 # [Pa]
 h_channel = 100e-6 # [m] Channel height/depth
-w_channel = 100e-6 # [m] Channel width
-m_dot = 3.6e-6 # [kg/s]
+w_channel = 212e-6 # [m] Channel width
+channel_amount = 5 # [-]
+m_dot = 0.55e-6/channel_amount # [kg/s]
 
 # Hydraulic diameter and area
 A_channel = h_channel*w_channel # [m^2] Channel area through which fluid flows
@@ -27,6 +28,7 @@ print("\n Hydraulic diameter: {:4.4f} um".format(D_h*1e6))
 rho_inlet = fp.get_density(T=T_inlet,p=p_inlet) # [kg/m^3]
 cp_inlet = fp.get_cp(T=T_inlet,p=p_inlet) # [J/(kg*K)] 
 u_inlet = velocity_from_mass_flow(m_dot=m_dot, rho=rho_inlet, A=A_channel) # [m/s]
+mass_flux = m_dot /A_channel # [kg/(m^2*s)] 
 Re_Dh_inlet = fp.get_Reynolds_from_velocity(T=T_inlet, p=p_inlet, L_ref=D_h, u=u_inlet) # [-] Reynolds number at inlet, based on hydraulic diameter
 Pr_inlet = fp.get_Prandtl(T=T_inlet,p=p_inlet) # [-] Prandtl number at inlet
 
@@ -35,6 +37,7 @@ print("\n-----     INLET     -----")
 print("Density: {:4.8f} kg/m^3".format(rho_inlet))
 print("C_p: {:4.8f} kJ/(kg*K)".format(cp_inlet*1e-3))
 print("Flow velocity: {:3.4f} m/s".format(u_inlet))
+print("Mass flux: {:3.2f} kg/(m^2*s)".format(mass_flux))
 print("Re_Dh: {:4.4f}".format(Re_Dh_inlet))
 print("Pr {:4.4f}".format(Pr_inlet))
 

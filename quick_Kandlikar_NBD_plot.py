@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from thermo.two_phase import Nu_Kandlikar_NBD_dryout
+from thermo.two_phase import Nu_Kandlikar_NBD_dryout, Nu_Kandlikar_NBD_CBD_dryout
 from thermo.prop import FluidProperties
 from thermo.convection import Nu_laminar_developed_constant_wall_temp_square, Nu_DB
 from basic.chamber import Reynolds_from_mass_flow
@@ -16,7 +16,7 @@ Nu_func_tp = Nu_Kandlikar_NBD_dryout
 
 # Design parameters 
 p=5e5 # Pressure through channel [Pa]
-m_dot = 25e-6 # [kg/s]
+m_dot = 200e-6 # [kg/s]
 A_channel = 1e-6 # [m^2] Channel cross sections
 D_h = 1e-6*np.array((100,200,500)) # [m] Hydraulic diameters
 
@@ -74,23 +74,23 @@ for D in D_iter:
     Nu_tp_laminar[i] = Nu_func_tp(args=args_tp_laminar)
     Nu_tp_turbulent[i] = Nu_func_tp(args=args_tp_turbulent)
 
-fig,axs = plt.subplots(1,2)
-axs[0].set_title("Laminar")
-axs[1].set_title("Turbulent")
+fig,axs = plt.subplots(1,1)
+#axs[0].set_title("Laminar")
+#axs[1].set_title("Turbulent")
 
 D_iter.reset()
 for D in D_iter:
     i = D_iter.index
-    axs[0].plot(x,Nu_tp_laminar[i], label="{:3.0f} $\\mu$m".format(D*1e6))
-    axs[1].plot(x,Nu_tp_turbulent[i], label="{:3.0f} $\\mu$m".format(D*1e6))
+    axs.plot(x,Nu_tp_laminar[i], label="{:3.0f} $\\mu$m".format(D*1e6))
+    #axs[1].plot(x,Nu_tp_turbulent[i], label="{:3.0f} $\\mu$m".format(D*1e6))
 
 plt.legend(title='Hydraulic diameter $D_h$:')
-axs[0].set_ylabel('Nusselt number $Nu_{tp}$ [-]')
-axs[0].set_xlabel('Vapour quality $x$ [-]')
-axs[0].grid()
-axs[1].set_xlabel('Vapour quality $x$ [-]')
-axs[1].grid()
-plt.suptitle("$Nu$ for Nucleate Boiling $Re<100$ ($p={:1.0f}$ bar, $G={:3.0f}$ kg$\\cdot$m$^{{-2}}$s$^{{-1}}$)".format(p*1e-5,G))
+axs.set_ylabel('Nusselt number $Nu_{tp}$ [-]')
+axs.set_xlabel('Vapour quality $x$ [-]')
+axs.grid()
+# axs[1].set_xlabel('Vapour quality $x$ [-]')
+# axs[1].grid()
+plt.suptitle("$Nu$ for Nucleate and Convective Boiling\n$Re>100$ ($p={:1.0f}$ bar, $G={:3.0f}$ kg$\\cdot$m$^{{-2}}$s$^{{-1}}$)".format(p*1e-5,G))
 plt.tight_layout(pad=0.5)
 
 plt.show()

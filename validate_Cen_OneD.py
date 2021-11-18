@@ -10,13 +10,13 @@ import basic.chamber
 from thermo.prop import FluidProperties
 
 # Functions to calculate Nusselt numbers.
-Nusselt_relations_1 = {
-    'Nu_func_gas': thermo.convection.Nu_DB, # [-] Function to calculate Nusselt number (gas phase)
-    'Nu_func_liquid': thermo.convection.Nu_DB,  # [-] Function to caculate Nusselt number (liquid phase)
-    'Nu_func_two_phase': tp.Nu_Kandlikar_NBD_dryout, # [-] Function to calculate Nusselt number (two-phase)
-    'Nu_func_le': thermo.convection.Nu_DB, # [-] Function to calculate Nusselt in two-phase, AS IF the flow was entirely liquid (two-phase, le)
-    'Nu_func_dryout': thermo.two_phase.Nu_DB_two_phase, #thermo.two_phase.Nu_DB_two_phase # [-] Function to calculate the Nusselt number after dry-out. It is up to Nu_func_two_phase to decide if/how to apply it'
-}
+# Nusselt_relations_1 = {
+#     'Nu_func_gas': thermo.convection.Nu_DB, # [-] Function to calculate Nusselt number (gas phase)
+#     'Nu_func_liquid': thermo.convection.Nu_DB,  # [-] Function to caculate Nusselt number (liquid phase)
+#     'Nu_func_two_phase': tp.Nu_Kandlikar_NBD_dryout, # [-] Function to calculate Nusselt number (two-phase)
+#     'Nu_func_le': thermo.convection.Nu_DB, # [-] Function to calculate Nusselt in two-phase, AS IF the flow was entirely liquid (two-phase, le)
+#     'Nu_func_dryout': thermo.two_phase.Nu_DB_two_phase, #thermo.two_phase.Nu_DB_two_phase # [-] Function to calculate the Nusselt number after dry-out. It is up to Nu_func_two_phase to decide if/how to apply it'
+# }
 
 Nusselt_relations_2 = {
     'Nu_func_gas': thermo.convection.Nu_laminar_developed_constant_wall_temp_square, # [-] Function to calculate Nusselt number (gas phase)
@@ -81,17 +81,17 @@ def calc_and_plot_thruster(td, axs_to_plot):
         steps_g=steps_g,
         fp=fp)
 
-        results_1 = oneD.full_homogenous_calculation(
-            prepared_values=prepared_values,
-            Nusselt_relations=Nusselt_relations_1,
-            A_channel=A_channel,
-            wetted_perimeter=wetted_perimeter,
-            D_hydraulic=D_hydraulic,
-            m_dot=m_dot,
-            T_wall=T_wall,
-            p_ref=p_inlet,
-            fp=fp
-            )
+        # results_1 = oneD.full_homogenous_calculation(
+        #     prepared_values=prepared_values,
+        #     Nusselt_relations=Nusselt_relations_1,
+        #     A_channel=A_channel,
+        #     wetted_perimeter=wetted_perimeter,
+        #     D_hydraulic=D_hydraulic,
+        #     m_dot=m_dot,
+        #     T_wall=T_wall,
+        #     p_ref=p_inlet,
+        #     fp=fp
+        #     )
         
         results_2 = oneD.full_homogenous_calculation(
             prepared_values=prepared_values,
@@ -108,7 +108,7 @@ def calc_and_plot_thruster(td, axs_to_plot):
         # First time the length crosses the actual length, store the value
         if (T_chamber_guess == None) and (results_2['L_total'] > td['L_channel']): # results_2 stores laminar results
             T_chamber_guess = T # [K]
-        L_1[it_T.index] = results_1['L_total']
+        # L_1[it_T.index] = results_1['L_total']
         L_2[it_T.index] = results_2['L_total']
 
     ## Print info about thruster, including, estimated chamber temperature for laminar relations
@@ -117,7 +117,7 @@ def calc_and_plot_thruster(td, axs_to_plot):
     
 
     axs_to_plot.set_title("$\\dot{{m}}={:1.2f}$ mg/s, $p={:1.2f}$ bar".format(m_dot*1e6,p_inlet*1e-5))
-    axs_to_plot.plot(T_chamber,L_1*1e3, label="Turbulent")
+    # axs_to_plot.plot(T_chamber,L_1*1e3, label="Turbulent")
     axs_to_plot.plot(T_chamber,L_2*1e3, label="Laminar")
     axs_to_plot.hlines(td['L_channel']*1e3, xmin=T_chamber[0], xmax=T_chamber[-1], linestyle='dashed', color='red', label="Real length")
     axs_to_plot.grid()

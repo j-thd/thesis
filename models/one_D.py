@@ -503,6 +503,8 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
     dP_l = None # [Pa] Pressure drop in liquid section of channel
     dP_tp = None # [Pa] Pressure drop in two-phase section of channel
     dP_g = None # [Pa] Pressure drop in gas section of channel
+    # Sum up the heat balances in the bottom plane if wall effects are calculated
+    Q_total_bottom_plane_heat_balance = None # [W] Heat balance is set to None so it is not accidently used without being calculated
     if (pressure_drop_relations is not None):
         # Check if contraction relation is given
         if 'contraction' in pressure_drop_relations:
@@ -569,11 +571,9 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
         dP_total = dP_l + dP_tp + dP_g + dP_contraction # [Pa] Total pressure drop of whatever source
         p_chamber = p_ref - dP_total # [Pa] P_ref is assumed to be inlet pressure
 
-        # Some values that may be of use, and are best calculated once correctly
-        T_chamber = p_g['T'][-1] # Last temperature in prepared gas phase values is chamber temperature (according to IRT)
+        
 
-        # Sum up the heat balances in the bottom plane if wall effects are calculated
-        Q_total_bottom_plane_heat_balance = None # [W] Heat balance is set to None so it is not accidently used without being calculated
+        
         if wall_args is not None:
             Q_l = res_l['Q_bottom_plane_heat_balance']
             Q_tp = res_tp['Q_bottom_plane_heat_balance']
@@ -584,7 +584,8 @@ def full_homogenous_calculation(prepared_values, Nusselt_relations, A_channel, w
             Q_total_bottom_plane_heat_balance = Q_l + Q_tp + Q_g
             # Should eventually be zero
             
-
+    # Some values that may be of use, and are best calculated once correctly
+    T_chamber = p_g['T'][-1] # Last temperature in prepared gas phase values is chamber temperature (according to IRT)
 
     return {
         'p_g': p_g,
