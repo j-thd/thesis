@@ -12,11 +12,16 @@ def run():
     # str_3mN_folder = "optimization_results_SA_w_channel_spacing_25/optimization_results-3mN/"
     # str_4mN_folder = "optimization_results_SA_w_channel_spacing_25/optimization_results-4mN/"
     # str_5mN_folder = "optimization_results_SA_w_channel_spacing_25/optimization_results-5mN/"
-    str_1mN_folder = "optimization_results-1mN/"
-    str_2mN_folder = "optimization_results-2mN/"
-    str_3mN_folder = "optimization_results-3mN/"
-    str_4mN_folder = "optimization_results-4mN/"
-    str_5mN_folder = "optimization_results-5mN/"
+    str_1mN_folder = "optimization_results_SA_DIV30/optimization_results-1mN/"
+    str_2mN_folder = "optimization_results_SA_DIV30/optimization_results-2mN/"
+    str_3mN_folder = "optimization_results_SA_DIV30/optimization_results-3mN/"
+    str_4mN_folder = "optimization_results_SA_DIV30/optimization_results-4mN/"
+    str_5mN_folder = "optimization_results_SA_DIV30/optimization_results-5mN/"
+    # str_1mN_folder = "optimization_results-1mN/"
+    # str_2mN_folder = "optimization_results-2mN/"
+    # str_3mN_folder = "optimization_results-3mN/"
+    # str_4mN_folder = "optimization_results-4mN/"
+    # str_5mN_folder = "optimization_results-5mN/"
     # Load data for different thrust levels
     d1 = load_data_in_folder(str_1mN_folder)
     d2 = load_data_in_folder(str_2mN_folder)

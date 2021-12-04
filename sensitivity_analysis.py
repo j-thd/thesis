@@ -8,21 +8,27 @@ SA_string_sc_25_micron = "\n(Sensitivity analysis on channel spacing:  $s_c \\ge
 SA_string_wc_10_micron = "\n(Sensitivity analysis on channel width:  $w_c \\geq 10$ $\\mu$m)"
 SA_string_AR_5 = "\n(Sensitivity analysis on exit area ratio:  $\\frac{{A_e}}{{A_t}} =5$)"
 SA_string_AR_15 = "\n(Sensitivity analysis on exit area ratio:  $\\frac{{A_e}}{{A_t}} =15$)"
-SA_string = SA_string_AR_5
+SA_string_DIV30 = "\n(Sensitivity analysis on exit area ratio:  $\\alpha_{{divergent}} =30 \\deg$)"
+SA_string = SA_string_AR_15
 
 def run():
     ## Load results of sensitivity analysis
     # # Strings to point towards results for different thrust levels
-    str_1mN_folder_SA = "optimization_results_SA_AR5/optimization_results-1mN/"
-    str_2mN_folder_SA = "optimization_results_SA_AR5/optimization_results-2mN/"
-    str_3mN_folder_SA = "optimization_results_SA_AR5/optimization_results-3mN/"
-    str_4mN_folder_SA = "optimization_results_SA_AR5/optimization_results-4mN/"
-    str_5mN_folder_SA = "optimization_results_SA_AR5/optimization_results-5mN/"
-    # str_1mN_folder_SA = "optimization_results_SA_AR15/optimization_results-1mN/"
-    # str_2mN_folder_SA = "optimization_results_SA_AR15/optimization_results-2mN/"
-    # str_3mN_folder_SA = "optimization_results_SA_AR15/optimization_results-3mN/"
-    # str_4mN_folder_SA = "optimization_results_SA_AR15/optimization_results-4mN/"
-    # str_5mN_folder_SA = "optimization_results_SA_AR15/optimization_results-5mN/"
+    # str_1mN_folder_SA = "optimization_results_SA_AR5/optimization_results-1mN/"
+    # str_2mN_folder_SA = "optimization_results_SA_AR5/optimization_results-2mN/"
+    # str_3mN_folder_SA = "optimization_results_SA_AR5/optimization_results-3mN/"
+    # str_4mN_folder_SA = "optimization_results_SA_AR5/optimization_results-4mN/"
+    # str_5mN_folder_SA = "optimization_results_SA_AR5/optimization_results-5mN/"
+    # str_1mN_folder_SA = "optimization_results_SA_DIV30/optimization_results-1mN/"
+    # str_2mN_folder_SA = "optimization_results_SA_DIV30/optimization_results-2mN/"
+    # str_3mN_folder_SA = "optimization_results_SA_DIV30/optimization_results-3mN/"
+    # str_4mN_folder_SA = "optimization_results_SA_DIV30/optimization_results-4mN/"
+    # str_5mN_folder_SA = "optimization_results_SA_DIV30/optimization_results-5mN/"
+    str_1mN_folder_SA = "optimization_results_SA_AR15/optimization_results-1mN/"
+    str_2mN_folder_SA = "optimization_results_SA_AR15/optimization_results-2mN/"
+    str_3mN_folder_SA = "optimization_results_SA_AR15/optimization_results-3mN/"
+    str_4mN_folder_SA = "optimization_results_SA_AR15/optimization_results-4mN/"
+    str_5mN_folder_SA = "optimization_results_SA_AR15/optimization_results-5mN/"
     # str_1mN_folder_SA = "optimization_results_SA_w_channel_spacing_25/optimization_results-1mN/"
     # str_2mN_folder_SA = "optimization_results_SA_w_channel_spacing_25/optimization_results-2mN/"
     # str_3mN_folder_SA = "optimization_results_SA_w_channel_spacing_25/optimization_results-3mN/"
@@ -82,8 +88,8 @@ def run():
     #plotPowerLossVsIsp(dl=dl_SA)
     #plotHeatingEfficiencyVsIsp(dl=dl_SA)
     plotChipAreaVsIsp(dl=dl)
-    # plotRelativePowerLoss(dl, dl_SA)
-    # plotAbsolutePowerLossDifference(dl, dl_SA)
+    plotRelativePowerLoss(dl, dl_SA)
+    plotAbsolutePowerLossDifference(dl, dl_SA)
 
     plt.show()
 
@@ -207,12 +213,13 @@ def process_data(npz_data):
 def plotRelativePowerLoss(dl, dl_SA):
     plt.figure()
     for data, data_SA in zip(dl, dl_SA):
-        t = 4
+        t = 1
+        print(data['Isp'][:])
         # Interpolate specific impulses
         P_total_interp = np.interp(data['Isp'], data_SA['Isp'], data_SA['P_total']) # [W] Map power consumption to new Isp values
-        #print(data['P_total'])
-        #print(data_SA['P_total'])
-        plt.plot(data['Isp'][:-t], 1-P_total_interp[:-t]/data['P_total'][:-t], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
+        print(data['P_total']/data['Isp'])
+        print(data_SA['P_total'])
+        plt.plot(data['Isp'][t:], 1-P_total_interp[t:]/data['P_total'][t:], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
         #plt.plot(data_SA['Isp'], data_SA['P_total'], label="{:1.0f} mN".format(data_SA['F_desired'][0]*1e3), linestyle='dashed')
     plt.xlabel("Specific impulse - $I_{{sp}}$ [s]")
     plt.ylabel("Relative reduction in $P_t$ - $1-\\frac{{P_{{t,new}}}}{{P_{{t,old}}}}$ [-]")
@@ -224,10 +231,10 @@ def plotRelativePowerLoss(dl, dl_SA):
 def plotAbsolutePowerLossDifference(dl, dl_SA):
     plt.figure()
     for data, data_SA in zip(dl, dl_SA):
-        t=4
+        t=1
         P_total_interp = np.interp(data['Isp'], data_SA['Isp'], data_SA['P_total']) # [W] Map power consumption to new Isp values
         #P_total_interp = np.interp(data_SA['Isp'], data['Isp'], data['P_total'])
-        plt.plot(data['Isp'][:-t], data['P_total'][:-t]-P_total_interp[:-t], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
+        plt.plot(data['Isp'][t:], data['P_total'][t:]-P_total_interp[t:], label="{:1.0f} mN".format(data['F_desired'][0]*1e3))
         #plt.plot(data_SA['Isp'], data_SA['P_total'], label="{:1.0f} mN".format(data_SA['F_desired'][0]*1e3), linestyle='dashed')
     plt.xlabel("Specific impulse - $I_{{sp}}$ [s]")
     plt.ylabel("Power loss difference - $P_{{t,old}}-P_{{t,new}}$ [W]")

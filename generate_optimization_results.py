@@ -17,7 +17,8 @@ T_h = 1100
 s = round((T_h-T_l)/25)+1
 
 #str_f = "optimization_results_SA_AR5/optimization_results-{:1.0f}mN/".format(F*1e3)
-str_f = "optimization_results_SA_AR15/optimization_results-{:1.0f}mN/".format(F*1e3)
+#str_f = "optimization_results_SA_AR15/optimization_results-{:1.0f}mN/".format(F*1e3)
+str_f = "optimization_results_SA_DIV30/optimization_results-{:1.0f}mN/".format(F*1e3)
 #str_f = "optimization_results_SA_w_channel_10/optimization_results-{:1.0f}mN/".format(F*1e3)
 #str_f = "optimization_results_SA_w_channel_spacing_25/optimization_results-{:1.0f}mN/".format(F*1e3)
 #str_f = "optimization_results-{:1.0f}mN/".format(F*1e3)

@@ -7,6 +7,7 @@ import timeit # To time speed of optmization
 
 import optimization
 import optimization.Settings_Cen
+#import optimization.settings_SA_DIV30
 #import optimization.settings
 #import optimization.settings_SA_w_channel_10
 #import optimization.settings_SA_AR_5
@@ -14,7 +15,7 @@ import optimization.Settings_Cen
 
 F = 7.71e-3
 T = 557.80
-str_f= "optimization-results-Cen/"
+str_f= "optimization-results-Cen-2/"
 
 
 def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case it is run as main
@@ -28,7 +29,7 @@ def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case 
     #save_file_companion = open(str_save_file+ ".pkl", "wb")
 
     # Load all settings
-    channel_amount_range = np.arange(1,50)
+    channel_amount_range = np.arange(9,10)
     #full_results = [] # List storing full results
     #full_prepared_values = [] # List storing full prepared values
     P_total = np.zeros(len(channel_amount_range))
@@ -91,6 +92,7 @@ def run(F_desired=F, T_chamber= T, str_folder= str_f): # Default values in case 
         print("- Channel width:         {:3.3f} micron".format(results['w_channel']*1e6))
         print("- Channel spacing:       {:3.3f} micron".format(results['w_channel_spacing']*1e6))
         print("- Top wall temperature:  {:3.2f} K".format(results['T_wall_top']))
+        print("- Pressure drop:         {:1.2f} bar".format(results['pressure_drop']*1e-5))
 
         #full_results.append(results['full_res'])
         #full_prepared_values.append(results['full_prepared_values'])

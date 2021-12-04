@@ -12,7 +12,7 @@ fp = FluidProperties("water")
 
 Nu_func_le_laminar = Nu_laminar_developed_constant_wall_temp_square
 Nu_func_le_turbulent = Nu_DB
-Nu_func_tp = Nu_Kandlikar_NBD_dryout
+Nu_func_tp = Nu_Kandlikar_NBD_CBD_dryout
 
 # Design parameters 
 p=5e5 # Pressure through channel [Pa]
@@ -38,7 +38,7 @@ Bo = fp.get_Bond_number(p_sat=p, L_ref=D_h) # [-] Bond number
 
 
 #  Calculate two-phase Nusselt number
-x = np.linspace(start=0, stop=1)
+x = np.linspace(start=0, stop=1, num=10000)
 D_iter = np.nditer(D_h, flags=['c_index'])
 Nu_tp_laminar = np.zeros((np.size(D_h),np.size(x))) # [-] Storing two-phase Nusselt numbers for assumed laminar flow
 Nu_tp_turbulent = np.zeros_like(Nu_tp_laminar) # [-] Storing two-phase Nusselt numbers for assumed turbulent flow
